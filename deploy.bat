@@ -15,4 +15,5 @@ echo "Addon path: %ADDON_PATH%"
 
 @MD "%ADDON_PATH%"
 
-@COPY "risk-v-core.lua" "%ADDON_PATH%\risk-v-core.lua"
+@COPY "risc-v-core.lua" "%ADDON_PATH%"
+@COPY "Addon.toc" "%ADDON_PATH%\%ADDON_NAME%.toc"
