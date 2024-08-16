@@ -9,19 +9,19 @@ local function bin(x)
     return tonumber(x, 2)
 end
 
-function RiscVCore:RegisterLoad(source)
+function RiscVCore:LoadRegister(source)
     assert((dest >= 0) and (dest <= 31), "register x".. tostring(source) .." isn't existed (load)")
     return self.registers[source]
 end
 
-function RiscVCore:RegisterStore(dest, value)
+function RiscVCore:StoreRegister(dest, value)
     if dest ~= 0 then
         assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
         self.registers[dest] = bit.band(value, 0xffffffff)
     end
 end
 
-function RiscVCore:PCStore(value)
+function RiscVCore:StorePC(value)
     assert(value % 4 == 0, "pc must be aligned")
     self.registers.pc = bit.band(value, 0xffffffff)
 end

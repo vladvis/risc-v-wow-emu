@@ -1,19 +1,19 @@
 function BaseInstructions_LUI(CPU, dest, value)
-    CPU:RegisterStore(dest, value)
+    CPU:StoreRegister(dest, value)
 end
 
 function BaseInstructions_AUIPC(CPU, dest, value)
-    CPU:RegisterStore(dest, CPU.registers.pc + value)
+    CPU:StoreRegister(dest, CPU.registers.pc + value)
 end
 
 function BaseInstructions_JAL(CPU, dest, offset)
     if offset > 1048576 then
         offset = offset - 2097152
     local old_pc = CPU.registers.pc
-    CPU:PCStore(CPU.registers.pc + offset)
+    CPU:StorePC(CPU.registers.pc + offset)
 
     if (dest ~= 0) then
-        CPU:RegisterStore(dest, old_pc + 4)
+        CPU:StoreRegister(dest, old_pc + 4)
     end
 
     if (dest == 1) or (dest == 5) then
@@ -47,5 +47,5 @@ function BaseInstructions_JALR(CPU, dest, funct3, source, offset)
         end
     end
 
-    CPU:PCStore(CPU:RegisterLoad(source) + offset)
+    CPU:StorePC(CPU:LoadRegister(source) + offset)
 end
