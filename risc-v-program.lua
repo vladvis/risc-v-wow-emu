@@ -4,8 +4,8 @@ RiscVProgram = {
 
 function RiscVProgram:AddSection(CPU, section_name, addr, size, mem)
     self.sections[section_name] = {
-        addr = addr,
-        size = size
+        [addr] = addr,
+        [size] = size
     }
     for i=0, bit.rshift(size, 2)-1 do
         CPU.memory:Set(addr+i*4, 0)
