@@ -9,10 +9,16 @@ local function bin(x)
     return tonumber(x, 2)
 end
 
+function RiscVCore:RegisterLoad(source)
+    assert((dest >= 0) and (dest <= 31), "register x".. tostring(source) .." isn't existed (load)")
+    return self.registers[source]
+end
+
 function RiscVCore:RegisterStore(dest, value)
-    assert(dest ~= 0, "x0 is immutable")
-    assert((dest >= 1) and (dest <= 31), "dest is out of bound")
-    self.registers[dest] = bit.band(value, 0xffffffff)
+    if dest ~= 0 then
+        assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
+        self.registers[dest] = bit.band(value, 0xffffffff)
+    end
 end
 
 function RiscVCore:PCStore(value)
@@ -48,6 +54,12 @@ function RiscVCore:InitCPU()
         handler = BaseInstructions_JAL
     }
 
+    self.opcodes[bin("1100111")] = {
+        name = "JALR",
+        type = "I",
+        handler = BaseInstructions_JALR
+    }
+
     self.program = {}
     self.program[0] = 5476535 -- LUI x1, 1337
 
@@ -68,8 +80,14 @@ function RiscVCore:Step()
         local imm_value = bit.band(instruction, 4294963200) -- instr & 0b11111111111111111111000000000000
         self.opcodes[opcode].handler(self, dest, imm_value)
     elseif self.opcodes[opcode].type == "J" then
-        local offset = bit.band(instruction, 4294963200) -- instr & 0b11111111111111111111000000000000
+        local offset = bit.rshift(bit.band(instruction, 4294963200), 12)*2 -- (instr & 0b11111111111111111111000000000000) >> 12
         self.opcodes[opcode].handler(self, offset)
+    elseif self.opcodes[opcode].type == "I" then
+        local dest = bit.rshift(bit.band(instruction, 3968), 7) -- (instr & 0b111110000000) >> 7
+        local funct3 = bit.rshift(bit.band(instruction, 28672), 12) -- (instr & 0b111000000000000) >> 12
+        local source = bit.rshift(bit.band(instruction, 1015808), 15) -- (instr & 0b11111000000000000000) >> 15
+        local imm_value = bit.rshift(bit.band(instruction, 4293918720), 20) -- (instr & 0b11111111111100000000000000000000) >> 20
+        self.opcodes[opcode].handler(self, dest, funct3, source, imm_value)
     else
         assert(0, "opcode encoding " .. tostring(self.opcodes[opcode].type) .. " is not implemented")
     end
