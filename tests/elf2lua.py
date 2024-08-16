@@ -69,7 +69,7 @@ function RiscVProgram:Init(CPU)
         lua_script += f"        [{hex(address)}] = {hex(value)},\n"
 
     lua_script += "    }\n"
-    lua_script += f"    self:SetMemory(CPU, {hex(entrypoint)}, mem_sections)\n"
+    lua_script += f"    self:SetMemory(CPU, mem_sections)\n"
     lua_script += f"    CPU:SetRegister(\"sp\", {hex(stack_pointer)})\n"  # Set the stack pointer
     # lua_script += f"    CPU:SetRegister(\"gp\", {hex(gp_pointer)})\n"  # Set the global pointer if needed
     lua_script += "end\n"
