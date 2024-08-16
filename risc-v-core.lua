@@ -154,8 +154,10 @@ function RiscVCore:InitCPU()
 
     self.memory = RiscVMemory
 
-    self.program = {}
-    self.program[0] = 5476535 -- LUI x1, 1337
+    self.program = RiscVProgram
+    self.program.Init(self)
+    self.registers.pc = self.program.entrypoint
+    -- self.program[0] = 5476535 -- LUI x1, 1337
 
     self.jumped = false
     self.is_running = 1

@@ -79,7 +79,18 @@ function BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
 end
 
 function BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
-
+    local addr = CPU:LoadRegister(rs1) + imm_value
+    local value = CPU:LoadRegister(rs2)
+    
+    if funct3 == 0 then -- SB
+        CPU.memory:Write(addr, value, 1)
+    elseif funct3 == 1 then -- SH
+        CPU.memory:Write(addr, value, 2)
+    elseif funct3 == 2 then -- SW
+        CPU.memory:Write(addr, value, 4)
+    else
+        assert(0, "store opcode " .. tostring(funct3) .. " is not existed")
+    end
 end
 
 function BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
@@ -95,5 +106,5 @@ function BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
 end
 
 function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
-
+    
 end
