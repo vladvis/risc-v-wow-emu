@@ -53,7 +53,7 @@ function RiscVMemory:Write(addr, value, vsize)
 
             local val2 = bit.band(self:Get(addr + (4 - misalign)), bit.lshift(0xffffffff, misalign*8))
             val2 = bit.band(bit.bor(val2, bit.rshift(value, (32 - misalign*8))), 0xffffffff)
-            self:Set(addr - misalign, val2)
+            self:Set(addr + (4 - misalign), val2)
         end
     elseif vsize == 2 then
         if addr % 4 == 0 then
@@ -85,15 +85,15 @@ function RiscVMemory:Write(addr, value, vsize)
         elseif addr % 4 == 1 then
             local val = bit.band(self:Get(addr - 1), 0xffff00ff)
             val = bit.bor(val, bit.band(bit.lshift(value, 8), 0x0000ff00))
-            self:Set(addr, val)
+            self:Set(addr - 1, val)
         elseif addr % 4 == 2 then
             local val = bit.band(self:Get(addr - 2), 0xff00ffff)
             val = bit.bor(val, bit.band(bit.lshift(value, 16), 0x00ff0000))
-            self:Set(addr, val)
+            self:Set(addr - 2, val)
         else
             local val = bit.band(self:Get(addr - 3), 0x00ffffff)
             val = bit.bor(val, bit.band(bit.lshift(value, 24), 0xff000000))
-            self:Set(addr, val)
+            self:Set(addr - 3, val)
         end
     else
         assert(0, "vsize " .. tostring(vsize) .. " is not supported")
@@ -112,7 +112,8 @@ function RiscVMemory:Test()
         [0x8004] = 0xcafebabe,
         [0x8008] = 0x12345678,
         [0x800c] = 0x01020304,
-        [0x8010] = 0x04030201
+        [0x8010] = 0x04030201,
+        [0x8014] = 0x11111111
     }
     for k, v in pairs(init_mem) do
         self:Set(k, v)
@@ -136,7 +137,35 @@ function RiscVMemory:Test()
     print(string.format("Read(0x8003, 4) = 0x%x", self:Read(0x8003, 4)))
     print(string.format("Read(0x8004, 4) = 0x%x", self:Read(0x8004, 4)))
     
-    -- self:DebugPrintMem()
-end
+    self:Write(0x8000, 0x55667788, 4)
+    self:Write(0x8005, 0xaabbccdd, 4)
+    self:Write(0x800a, 0x00112233, 4)
+    self:Write(0x800f, 0xffee4499, 4)
 
-RiscVMemory:Test()
+    print(string.format("Read(0x8000, 4) = 0x%x", self:Read(0x8000, 4)))
+    print(string.format("Read(0x8005, 4) = 0x%x", self:Read(0x8005, 4)))
+    print(string.format("Read(0x800a, 4) = 0x%x", self:Read(0x800a, 4)))
+    print(string.format("Read(0x800f, 4) = 0x%x", self:Read(0x800f, 4)))
+
+    self:Write(0x8000, 0xaabb, 2)
+    self:Write(0x8005, 0xccdd, 2)
+    self:Write(0x800a, 0xeeff, 2)
+    self:Write(0x800f, 0x2233, 2)
+
+    print(string.format("Read(0x8000, 2) = 0x%x", self:Read(0x8000, 2)))
+    print(string.format("Read(0x8005, 2) = 0x%x", self:Read(0x8005, 2)))
+    print(string.format("Read(0x800a, 2) = 0x%x", self:Read(0x800a, 2)))
+    print(string.format("Read(0x800f, 2) = 0x%x", self:Read(0x800f, 2)))
+
+    self:Write(0x8000, 0x12, 1)
+    self:Write(0x8005, 0x34, 1)
+    self:Write(0x800a, 0x56, 1)
+    self:Write(0x800f, 0x78, 1)
+
+    print(string.format("Read(0x8000, 1) = 0x%x", self:Read(0x8000, 1)))
+    print(string.format("Read(0x8005, 1) = 0x%x", self:Read(0x8005, 1)))
+    print(string.format("Read(0x800a, 1) = 0x%x", self:Read(0x800a, 1)))
+    print(string.format("Read(0x800f, 1) = 0x%x", self:Read(0x800f, 1)))
+
+    self:DebugPrintMem()
+end
