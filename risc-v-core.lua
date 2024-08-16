@@ -25,12 +25,22 @@ local function decode_funct3(instr)
     return bit.band(bit.rshift(instruction, 12), 0x07) -- (instr >> 12) & 0b111
 end
 
-local function set_sign(value, bits)
+function set_sign(value, bits)
     local max_int = bit.lshift(1, bits - 1) - 1
     if value > max_int then
         return value - (max_int + 1)*2
+    else
+        return value
     end
-    return value
+end
+
+function set_unsign(value, bits)
+    local max_uint = bit.lshift(1, bits)
+    if value < 0 then
+        return value + max_uint
+    else
+        return value
+    end
 end
 
 function RiscVCore:LoadRegister(source)
@@ -47,6 +57,7 @@ end
 
 function RiscVCore:StorePC(value)
     assert(value % 4 == 0, "pc must be aligned")
+    self.jumped = true
     self.registers.pc = bit.band(value, 0xffffffff)
 end
 
@@ -99,11 +110,54 @@ function RiscVCore:InitCPU()
         handler = BaseInstructions_JALR
     }
 
-    self.memory = {}
+    self.opcodes[bin("1100011")] = {
+        name = "BRANCH",
+        type = "B",
+        handler = BaseInstructions_BRANCH
+    }
+
+    self.opcodes[bin("0000011")] = {
+        name = "LOAD",
+        type = "I",
+        handler = BaseInstructions_LOAD
+    }
+
+    self.opcodes[bin("0100011")] = {
+        name = "STORE",
+        type = "S",
+        handler = BaseInstructions_STORE
+    }
+
+    self.opcodes[bin("0010011")] = {
+        name = "OP-IMM",
+        type = "I",
+        handler = BaseInstructions_OP_IMM
+    }
+
+    self.opcodes[bin("0110011")] = {
+        name = "OP",
+        type = "R",
+        handler = BaseInstructions_OP
+    }
+
+    self.opcodes[bin("0001111")] = {
+        name = "MISC-MEM",
+        type = "I",
+        handler = BaseInstructions_MISC_MEM
+    }
+
+    self.opcodes[bin("1110011")] = {
+        name = "SYSTEM",
+        type = "I",
+        handler = BaseInstructions_SYSTEM
+    }
+
+    self.memory = RiscVMemory
 
     self.program = {}
     self.program[0] = 5476535 -- LUI x1, 1337
 
+    self.jumped = false
     self.is_running = 1
 end
 
@@ -181,7 +235,11 @@ function RiscVCore:Step()
         assert(0, "opcode encoding " .. tostring(self.opcodes[opcode].type) .. " is not implemented")
     end
 
-    self.registers.pc = self.registers.pc + 4
+    if self.jumped then
+        self.jumped = false
+    else
+        self.registers.pc = self.registers.pc + 4
+    end
 end
 
 function RiscVCore:PrintRegs()
