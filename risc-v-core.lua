@@ -10,19 +10,19 @@ local function bin(x)
 end
 
 local function decode_rd(instr)
-    return bit.band(bit.rshift(instruction, 7), 0x1f) -- (instr >> 7) & 0b11111
+    return bit.band(bit.rshift(instr, 7), 0x1f) -- (instr >> 7) & 0b11111
 end
 
 local function decode_rs1(instr)
-    return bit.band(bit.rshift(instruction, 15), 0x1f) -- (instr >> 15) & 0b11111
+    return bit.band(bit.rshift(instr, 15), 0x1f) -- (instr >> 15) & 0b11111
 end
 
 local function decode_rs2(instr)
-    return bit.band(bit.rshift(instruction, 20), 0x1f) -- (instr >> 20) & 0b11111
+    return bit.band(bit.rshift(instr, 20), 0x1f) -- (instr >> 20) & 0b11111
 end
 
 local function decode_funct3(instr)
-    return bit.band(bit.rshift(instruction, 12), 0x07) -- (instr >> 12) & 0b111
+    return bit.band(bit.rshift(instr, 12), 0x07) -- (instr >> 12) & 0b111
 end
 
 function set_sign(value, bits)
@@ -44,7 +44,7 @@ function set_unsign(value, bits)
 end
 
 function RiscVCore:LoadRegister(source)
-    assert((dest >= 0) and (dest <= 31), "register x".. tostring(source) .." isn't existed (load)")
+    assert((source >= 0) and (source <= 31), "register x".. tostring(source) .." isn't existed (load)")
     return self.registers[source]
 end
 
@@ -75,6 +75,30 @@ function RiscVCore:WriteDWORD(address, value)
     assert(address % 4 == 0, "address must be aligned")
     assert(self.memory ~= nil, "memory is not initialized")
     self.memory[address] = value
+end
+
+function RiscVCore:InitCSR()
+    self.csr = {}
+
+    -- Initialize commonly used CSRs (e.g., machine mode)
+    self.csr[0x300] = 0x00000000 -- mstatus: Machine status register
+    self.csr[0x305] = 0x00000000 -- mtvec: Machine trap-vector base-address register
+    self.csr[0x341] = 0x00000000 -- mepc: Machine exception program counter
+    self.csr[0x342] = 0x00000000 -- mcause: Machine cause register
+    self.csr[0x343] = 0x00000000 -- mtval: Machine trap value register
+    self.csr[0x344] = 0x00000000 -- mip: Machine interrupt pending
+    self.csr[0x304] = 0x00000000 -- mie: Machine interrupt enable
+    -- Add more CSRs as needed...
+end
+
+function RiscVCore:ReadCSR(csr_address)
+    assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+    return self.csr[csr_address]
+end
+
+function RiscVCore:WriteCSR(csr_address, value)
+    assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+    self.csr[csr_address] = bit.band(value, 0xffffffff)
 end
 
 function RiscVCore:InitCPU()
@@ -152,23 +176,35 @@ function RiscVCore:InitCPU()
         handler = BaseInstructions_SYSTEM
     }
 
+    self:InitCSR()
     self.memory = RiscVMemory
 
     self.program = RiscVProgram
     self.program:Init(self)
     self.registers.pc = self.program.entrypoint
+    print(string.format("0x%x", self.registers.pc))
 
     self.jumped = false
     self.is_running = 1
+
+    self.counter = 0
 end
 
 function RiscVCore:Step()
+    self.counter = self.counter + 1
+    if self.counter == 100000 then
+        local result_addr = 0x11164
+        for i = 0, 9 do
+            local fib_number = self.memory:Read(result_addr + i*4, 4)
+            print(string.format("result[%d] = %d", i, fib_number))
+            self.is_running = 0
+        end
+    end
     assert(self.program ~= nil, "missing program")
-    local instruction = self.program[self.registers.pc]
+    local instruction = self.memory:Get(self.registers.pc)
     assert(instruction ~= nil, "out of bound execution")
 
     opcode = bit.band(instruction, 0x7f)
-
     assert(self.opcodes[opcode], "opcode ".. tostring(opcode) .." is not implemented")
 
     if self.opcodes[opcode].type == "U" then
@@ -210,7 +246,7 @@ function RiscVCore:Step()
         imm_value = bit.bor(imm_value, bit.band(bit.rshift(instruction, 19), 0x1000))
         imm_value = set_sign(imm_value, 13)
 
-        self.opcode[opcode].handler(self, funct3, rs1, rs2, imm_value)
+        self.opcodes[opcode].handler(self, funct3, rs1, rs2, imm_value)
 
     elseif self.opcodes[opcode].type == "S" then
 
@@ -252,8 +288,8 @@ end
 
 RiscVCore:InitCPU()
 
--- while RiscVCore.is_running do
+while RiscVCore.is_running == 1 do
     RiscVCore:Step()
--- end
+end
 
 RiscVCore:PrintRegs()

@@ -42,11 +42,11 @@ function RiscVMemory:Read(addr, vsize)
 end
 
 function RiscVMemory:Write(addr, value, vsize)
+    local misalign = bit.band(addr, 3)
     if vsize == 4 then
-        if addr % 4 == 0 then -- aligned write
+        if misalign == 0 then -- aligned write
             self:Set(addr, value)
         else -- misaligned write
-            local misalign = addr % 4
             local val1 = bit.band(self:Get(addr - misalign), bit.rshift(0xffffffff, 32 - misalign*8))
             val1 = bit.band(bit.bor(val1, bit.lshift(value, misalign*8)), 0xffffffff)
             self:Set(addr - misalign, val1)
@@ -56,19 +56,19 @@ function RiscVMemory:Write(addr, value, vsize)
             self:Set(addr + (4 - misalign), val2)
         end
     elseif vsize == 2 then
-        if addr % 4 == 0 then
+        if misalign == 0 then
             local val = bit.band(self:Get(addr), 0xffff0000)
             val = bit.bor(val, bit.band(value, 0x0000ffff))
             self:Set(addr, val)
-        elseif addr % 4 == 1 then
+        elseif misalign == 1 then
             local val = bit.band(self:Get(addr - 1), 0xff0000ff)
             val = bit.bor(val, bit.band(bit.lshift(value, 8), 0x00ffff00))
             self:Set(addr - 1, val)
-        elseif addr % 4 == 2 then
+        elseif misalign == 2 then
             local val = bit.band(self:Get(addr - 2), 0x0000ffff)
             val = bit.bor(val, bit.band(bit.lshift(value, 16), 0xffff0000))
             self:Set(addr - 2, val)
-        elseif addr % 4 == 3 then
+        elseif misalign == 3 then
             local val1 = bit.band(self:Get(addr - 3), 0x00ffffff)
             val1 = bit.bor(val1, bit.band(bit.lshift(value, 24), 0xff000000))
             self:Set(addr - 3, val1)
@@ -78,15 +78,15 @@ function RiscVMemory:Write(addr, value, vsize)
             self:Set(addr + 1, val2)
         end
     elseif vsize == 1 then
-        if addr % 4 == 0 then
+        if misalign == 0 then
             local val = bit.band(self:Get(addr), 0xffffff00)
             val = bit.bor(val, bit.band(value, 0x000000ff))
             self:Set(addr, val)
-        elseif addr % 4 == 1 then
+        elseif misalign == 1 then
             local val = bit.band(self:Get(addr - 1), 0xffff00ff)
             val = bit.bor(val, bit.band(bit.lshift(value, 8), 0x0000ff00))
             self:Set(addr - 1, val)
-        elseif addr % 4 == 2 then
+        elseif misalign == 2 then
             local val = bit.band(self:Get(addr - 2), 0xff00ffff)
             val = bit.bor(val, bit.band(bit.lshift(value, 16), 0x00ff0000))
             self:Set(addr - 2, val)
@@ -142,7 +142,8 @@ function RiscVMemory:Test()
     self:Write(0x800a, 0x00112233, 4)
     self:Write(0x800f, 0xffee4499, 4)
 
-    print(string.format("Read(0x8000, 4) = 0x%x", self:Read(0x8000, 4)))
+    assert(self:Read(0x8000, 4) == 0x55667788, "test failed")
+    assert(self:Read(0x8005, 4) == 0xaabbccdd, "test failed")
     print(string.format("Read(0x8005, 4) = 0x%x", self:Read(0x8005, 4)))
     print(string.format("Read(0x800a, 4) = 0x%x", self:Read(0x800a, 4)))
     print(string.format("Read(0x800f, 4) = 0x%x", self:Read(0x800f, 4)))

@@ -1162,5 +1162,5 @@ function RiscVProgram:Init(CPU)
         [0x12000] = 0x0,
     }
     self:SetMemory(CPU, mem_sections)
-    CPU:SetRegister("sp", 0x7ff00000)
+    CPU:SetRegister(2, 0x7ff00000)
 end
