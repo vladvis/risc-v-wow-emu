@@ -174,42 +174,42 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
 
     if funct3 == 0x0 then
         if funct7 == 0x00 then -- ADD
-            result = op1 + op2
+            result = bit.band(op1 + op2, 0xFFFFFFFF)
         elseif funct7 == 0x20 then -- SUB
-            result = op1 - op2
+            result = bit.band(op1 - op2, 0xFFFFFFFF)
         elseif funct7 == 0x01 then -- MUL (RV32M)
-            result = bit.band((op1 * op2), 0xFFFFFFFF) -- Результат должен быть в пределах 32-битного значения
+            result = bit.band(op1 * op2, 0xFFFFFFFF)
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x1 then
-        if funct7 == 0x0 then -- SLL
+        if funct7 == 0x00 then -- SLL
             result = bit.lshift(op1, bit.band(op2, 0x1F))
-        elseif funct7 == 0x1 then -- MULH
+        elseif funct7 == 0x01 then -- MULH
             local signed_op1 = set_sign(op1, 32)
             local signed_op2 = set_sign(op2, 32)
             local full_result = signed_op1 * signed_op2
-            result = bit.band(bit.rshift(full_result, 32), 0xFFFFFFFF) -- Берем старшие 32 бита результата
+            result = set_unsign(bit.rshift(full_result, 32), 32)
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x2 then
-        if funct7 == 0x0 then -- SLT
-            result = set_sign(op1, 32) < set_sign(op2, 32) and 1 or 0
-        elseif funct7 == 0x1 then -- MULHSU
+        if funct7 == 0x00 then -- SLT
+            result = bit.band(set_sign(op1, 32) < set_sign(op2, 32) and 1 or 0, 0xFFFFFFFF)
+        elseif funct7 == 0x01 then -- MULHSU
             local signed_op1 = set_sign(op1, 32)
             local unsigned_op2 = op2
             local full_result = signed_op1 * unsigned_op2
-            result = bit.band(bit.rshift(full_result, 32), 0xFFFFFFFF) -- Берем старшие 32 бита результата
+            result = set_unsign(bit.rshift(full_result, 32), 32)
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x3 then
-        if funct7 == 0x0 then -- SLTU
-            result = op1 < op2 and 1 or 0
-        elseif funct7 == 0x1 then -- MULHU
+        if funct7 == 0x00 then -- SLTU
+            result = bit.band(op1 < op2 and 1 or 0, 0xFFFFFFFF)
+        elseif funct7 == 0x01 then -- MULHU
             local full_result = op1 * op2
-            result = bit.band(bit.rshift(full_result, 32), 0xFFFFFFFF) -- Берем старшие 32 бита результата
+            result = bit.rshift(full_result, 32)
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
@@ -218,23 +218,23 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             result = bit.bxor(op1, op2)
         elseif funct7 == 0x01 then -- DIV (RV32M)
             if op2 == 0 then
-                result = -1 -- В случае деления на 0 возвращаем -1
+                result = 0xFFFFFFFF
             else
-                result = math.floor(set_sign(op1, 32) / set_sign(op2, 32))
+                result = set_unsign(math.floor(set_sign(op1, 32) / set_sign(op2, 32)), 32)
             end
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x5 then
         if funct7 == 0x00 then -- SRL
-            result = bit.rshift(op1, bit.band(op2, 0x1F))
+            result = bit.band(bit.rshift(op1, bit.band(op2, 0x1F)), 0xFFFFFFFF)
         elseif funct7 == 0x20 then -- SRA
-            result = bit.arshift(op1, bit.band(op2, 0x1F))
+            result = bit.band(bit.arshift(op1, bit.band(op2, 0x1F)), 0xFFFFFFFF)
         elseif funct7 == 0x01 then -- DIVU (RV32M)
             if op2 == 0 then
-                result = 0xFFFFFFFF -- В случае деления на 0 возвращаем максимальное значение
+                result = 0xFFFFFFFF
             else
-                result = math.floor(op1 / op2)
+                result = set_unsign(math.floor(op1 / op2), 32)
             end
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -244,11 +244,11 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             result = bit.bor(op1, op2)
         elseif funct7 == 0x01 then -- REM (RV32M)
             if op2 == 0 then
-                result = op1 -- В случае деления на 0 возвращаем делимое
+                result = op1
             else
                 local signed_op1 = set_sign(op1, 32)
                 local signed_op2 = set_sign(op2, 32)
-                result = op1 % op2
+                result = set_unsign(signed_op1 % signed_op2, 32)
             end
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -258,9 +258,9 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             result = bit.band(op1, op2)
         elseif funct7 == 0x01 then -- REMU (RV32M)
             if op2 == 0 then
-                result = op1 -- В случае деления на 0 возвращаем делимое
+                result = op1
             else
-                result = op1 % op2
+                result = set_unsign(op1 % op2, 32)
             end
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -294,7 +294,6 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                 assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end
         elseif imm_value == 1 then -- EBREAK
-            -- Handle a breakpoint. You can implement a debug trap or halt the emulator.
             print("EBREAK encountered at PC: " .. tostring(CPU.registers.pc))
             CPU.is_running = 0
         else
