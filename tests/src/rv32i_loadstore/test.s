@@ -85,7 +85,7 @@ lhu_pass:
     la x1, store_data
     li x2, 0xAB
     sb x2, 0(x1)           # Store byte at address x1
-    lb x3, 0(x1)           # Load it back to verify
+    lbu x3, 0(x1)           # Load it back to verify
     beq x2, x3, sb_pass
 
 sb_fail:
@@ -97,7 +97,7 @@ sb_pass:
     # Test 7: SH - Store Halfword
     li x2, 0xCDEF
     sh x2, 0(x1)           # Store halfword at address x1
-    lh x3, 0(x1)           # Load it back to verify
+    lhu x3, 0(x1)           # Load it back to verify
     beq x2, x3, sh_pass
 
 sh_fail:
@@ -126,7 +126,7 @@ sw_pass:
     la x1, combined_data
     li x2, 0xAB
     sb x2, 0(x1)           # Store byte at address x1
-    lb x3, 0(x1)           # Load byte back to verify
+    lbu x3, 0(x1)           # Load byte back to verify
     beq x2, x3, sb_lb_pass
 
 sb_lb_fail:
@@ -138,7 +138,7 @@ sb_lb_pass:
     # Test 10: SH and LH - Store Halfword and Load Halfword
     li x2, 0xCDEF
     sh x2, 0(x1)           # Store halfword at address x1
-    lh x3, 0(x1)           # Load halfword back to verify
+    lhu x3, 0(x1)           # Load halfword back to verify
     beq x2, x3, sh_lh_pass
 
 sh_lh_fail:
@@ -197,7 +197,7 @@ sw_lbu_pass:
     # Test 15: Store Halfword, Load Byte (SH and LB)
     li x2, 0xABCD
     sh x2, 0(x1)           # Store halfword at address x1
-    lb x3, 0(x1)           # Load byte (should be 0xCD in Little Endian)
+    lbu x3, 0(x1)           # Load byte (should be 0xCD in Little Endian)
     li x4, 0xCD
     beq x3, x4, sh_lb_pass
 
