@@ -178,9 +178,13 @@ end
 function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
     if funct3 == 0 then
         if imm_value == 0 then -- ECALL
-            assert(0, "WE GOT INTERRUPT")
-            -- Handle environment call, typically for syscall emulation.
-            -- Implement based on the environment you are emulating (Linux syscalls, etc.).
+            syscall_num = CPU:LoadRegister(10)
+            if syscall_num == 93 then -- exit
+                CPU.is_running = 0
+                CPU.exit_code = CPU:LoadRegister(11)
+            else
+                assert(0, "syscall " .. tostring(syscall_num) .. " is not implemented")
+            end
         elseif imm_value == 1 then -- EBREAK
             -- Handle a breakpoint. You can implement a debug trap or halt the emulator.
             print("EBREAK encountered at PC: " .. tostring(CPU.registers.pc))

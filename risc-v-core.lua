@@ -178,15 +178,9 @@ function RiscVCore:InitCPU(init_handler)
 
     self.jumped = false
     self.is_running = 1
-
-    self.counter = 0
 end
 
 function RiscVCore:Step()
-    self.counter = self.counter + 1
-    if self.counter == 100000 then
-        self.is_running = 0
-    end
     local instruction = self.memory:Get(self.registers.pc)
     assert(instruction ~= nil, "out of bound execution")
 
