@@ -22,5 +22,10 @@ echo "Addon path: %ADDON_PATH%"
 
 :: TESTS
 @MD "%ADDON_PATH%\tests"
-@COPY "tests\lua_bin\fib.lua" "%ADDON_PATH%\tests\fib.lua"
-@COPY "tests\lua_bin\testsuite.lua" "%ADDON_PATH%\tests\testsuite.lua"
+for %%f in (tests\lua_bin\*.lua) do (
+  @COPY "%%f" "%ADDON_PATH%\tests"
+  echo %%~nf.lua >> "%ADDON_PATH%\%ADDON_NAME%.toc"
+)
+
+@COPY "tests\testsuite.lua" "%ADDON_PATH%\tests"
+echo testsuite.lua >> "%ADDON_PATH%\%ADDON_NAME%.toc"

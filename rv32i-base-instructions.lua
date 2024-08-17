@@ -188,7 +188,7 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
         elseif imm_value == 1 then -- EBREAK
             -- Handle a breakpoint. You can implement a debug trap or halt the emulator.
             print("EBREAK encountered at PC: " .. tostring(CPU.registers.pc))
-            CPU.is_running = false
+            CPU.is_running = 0
         else
             assert(0, "Unsupported SYSTEM funct12: " .. tostring(imm_value))
         end

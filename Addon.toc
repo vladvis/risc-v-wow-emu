@@ -1,5 +1,3 @@
-tests\fib.lua
 rv32i-base-instructions.lua
 risc-v-memory.lua
 risc-v-core.lua
-tests\testsuite.lua
