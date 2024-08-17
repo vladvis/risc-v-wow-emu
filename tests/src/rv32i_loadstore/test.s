@@ -35,7 +35,7 @@ lb_pass:
 
     # Test 2: LH - Load Halfword
     lh x2, 1(x1)           # Load halfword starting from address x1 + 1
-    li x3, 0x3456          # Expected result (Little Endian)
+    li x3, 0x5634          # Expected result (Little Endian)
     beq x2, x3, lh_pass
 
 lh_fail:
@@ -68,7 +68,7 @@ lbu_pass:
 
     # Test 5: LHU - Load Halfword Unsigned
     lhu x2, 1(x1)          # Load halfword (unsigned) starting from address x1 + 1
-    li x3, 0x3456          # Expected result
+    li x3, 0x5634          # Expected result
     beq x2, x3, lhu_pass
 
 lhu_fail:
