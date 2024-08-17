@@ -20,6 +20,10 @@ function RunTests()
         rv32i_shift = {
             init = Init_rv32i_shift,
             verify = Verify_rv32i_shift
+        },
+        rv32i_comparison = {
+            init = Init_rv32i_comparison,
+            verify = Verify_rv32i_comparison
         }
     }
 
