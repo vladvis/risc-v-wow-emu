@@ -1,13 +1,13 @@
 function Init_{{ name }}(CPU)
-    self.entrypoint = {{ entrypoint | hex }}
-    self.stack_pointer = {{ stack_pointer | hex }}
-    self.heap_start = {{ heap_start | hex }}
+    CPU.entrypoint = {{ entrypoint | hex }}
+    CPU.stack_pointer = {{ stack_pointer | hex }}
+    CPU.heap_start = {{ heap_start | hex }}
 
     local mem_sections = {
     {% for address, value in memory_map.items() %}
         [{{ address | hex }}] = {{ value | hex }},{% endfor %}
     }
-    self:SetMemory(CPU, mem_sections)
+    CPU:SetMemory(CPU, mem_sections)
     CPU:StoreRegister("sp", {{ stack_pointer | hex }})
 end
 
