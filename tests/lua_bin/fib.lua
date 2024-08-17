@@ -1176,5 +1176,5 @@ function Init_fib(CPU)
         [0x12000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
-    CPU:StoreRegister("sp", 0x7ff00000)
+    CPU:StoreRegister(2, 0x7ff00000)
 end

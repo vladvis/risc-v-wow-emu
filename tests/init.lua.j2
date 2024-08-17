@@ -8,6 +8,6 @@ function Init_{{ name }}(CPU)
         [{{ address | hex }}] = {{ value | hex }},{% endfor %}
     }
     CPU:SetMemory(CPU, mem_sections)
-    CPU:StoreRegister("sp", {{ stack_pointer | hex }})
+    CPU:StoreRegister(2, {{ stack_pointer | hex }})
 end
 

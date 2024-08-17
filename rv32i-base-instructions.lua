@@ -178,10 +178,10 @@ end
 function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
     if funct3 == 0 then
         if imm_value == 0 then -- ECALL
-            syscall_num = CPU:LoadRegister(10)
+            syscall_num = CPU:LoadRegister(17)
             if syscall_num == 93 then -- exit
                 CPU.is_running = 0
-                CPU.exit_code = CPU:LoadRegister(11)
+                CPU.exit_code = CPU:LoadRegister(10)
             else
                 assert(0, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end
