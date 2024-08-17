@@ -1,6 +1,7 @@
 import sys
 from io import BytesIO
 from elftools.elf.elffile import ELFFile
+from jinja2 import Environment, FileSystemLoader
 
 def load_elf_to_memory(elf_data, stack_size=0x1000, stack_start=0x7ff00000):
     memory_map = {}
@@ -56,28 +57,28 @@ def load_elf_to_memory(elf_data, stack_size=0x1000, stack_start=0x7ff00000):
 
     return entrypoint, initial_stack_pointer, heap_start, gp_pointer, memory_map
 
-def generate_lua_script(entrypoint, stack_pointer, heap_start, gp_pointer, memory_map):
-    lua_script = f"""
-function RiscVProgram:Init(CPU)
-    self.entrypoint = {hex(entrypoint)}
-    self.stack_pointer = {hex(stack_pointer)}
-    self.heap_start = {hex(heap_start)}
+def generate_lua_script(name, entrypoint, stack_pointer, heap_start, gp_pointer, memory_map):
+    # Set up the Jinja2 environment and load the template
+    env = Environment(loader=FileSystemLoader('.'))
+    env.filters['hex'] = hex
+    template = env.get_template('init.lua.j2')
 
-    local mem_sections = {{
-"""
-    for address, value in memory_map.items():
-        lua_script += f"        [{hex(address)}] = {hex(value)},\n"
-
-    lua_script += "    }\n"
-    lua_script += f"    self:SetMemory(CPU, mem_sections)\n"
-    lua_script += f"    CPU:SetRegister(\"sp\", {hex(stack_pointer)})\n"  # Set the stack pointer
-    # lua_script += f"    CPU:SetRegister(\"gp\", {hex(gp_pointer)})\n"  # Set the global pointer if needed
-    lua_script += "end\n"
+    # Render the template with the provided data
+    lua_script = template.render(
+        name=name,
+        entrypoint=entrypoint,
+        stack_pointer=stack_pointer,
+        heap_start=heap_start,
+        gp_pointer=gp_pointer,
+        memory_map=memory_map
+    )
 
     return lua_script
 
 # Read ELF file from stdin
 if __name__ == "__main__":
+    name = sys.argv[1]
+
     # Read the entire input from stdin
     elf_data = sys.stdin.buffer.read()
     
@@ -85,5 +86,5 @@ if __name__ == "__main__":
     entrypoint, stack_pointer, heap_start, gp_pointer, memory_map = load_elf_to_memory(elf_data)
     
     # Generate and output the Lua script
-    lua_script = generate_lua_script(entrypoint, stack_pointer, heap_start, gp_pointer, memory_map)
+    lua_script = generate_lua_script(name, entrypoint, stack_pointer, heap_start, gp_pointer, memory_map)
     sys.stdout.write(lua_script)

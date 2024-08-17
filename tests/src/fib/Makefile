@@ -4,7 +4,7 @@
 CC = /opt/toolchains/riscv32/bin/riscv32-unknown-elf-gcc
 
 # Compiler flags
-CFLAGS = -Wall -O0 -nostdlib -no-pie
+CFLAGS = -Wall -O0 -nostdlib
 
 # Target executable name
 TARGET = out
