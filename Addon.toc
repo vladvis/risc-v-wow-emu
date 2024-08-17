@@ -1,4 +1,4 @@
+tests\fib.lua
 rv32i-base-instructions.lua
 risc-v-memory.lua
-risc-v-program.lua
 risc-v-core.lua

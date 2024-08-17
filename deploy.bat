@@ -17,6 +17,9 @@ echo "Addon path: %ADDON_PATH%"
 
 @COPY "risc-v-core.lua" "%ADDON_PATH%"
 @COPY "risc-v-memory.lua" "%ADDON_PATH%"
-@COPY "risc-v-program.lua" "%ADDON_PATH%"
 @COPY "rv32i-base-instructions.lua" "%ADDON_PATH%"
 @COPY "Addon.toc" "%ADDON_PATH%\%ADDON_NAME%.toc"
+
+:: TESTS
+@MD "%ADDON_PATH%\tests"
+@COPY "tests\lua_bin\fib.lua" "%ADDON_PATH%\tests\fib.lua"

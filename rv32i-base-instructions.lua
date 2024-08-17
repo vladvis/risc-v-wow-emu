@@ -28,7 +28,7 @@ end
 
 local function bool_to_number(value)
     return value == true and 1 or 0
- end
+end
 
 function BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
     local op1 = CPU:LoadRegister(rs1)

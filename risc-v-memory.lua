@@ -1,5 +1,4 @@
 RiscVMemory = {
-    mem = {}
 }
 
 function RiscVMemory:Get(addr)

@@ -1,8 +1,8 @@
 
-function RiscVProgram:Init(CPU)
-    self.entrypoint = 0x10148
-    self.stack_pointer = 0x7ff00000
-    self.heap_start = 0x12000
+function Init_Test1(CPU)
+    CPU.entrypoint = 0x10148
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x12000
 
     local mem_sections = {
         [0x10094] = 0xfe010113,
@@ -1161,6 +1161,34 @@ function RiscVProgram:Init(CPU)
         [0x7feff004] = 0x0,
         [0x12000] = 0x0,
     }
-    self:SetMemory(CPU, mem_sections)
-    CPU:SetRegister(2, 0x7ff00000)
+    CPU:SetMemory(CPU, mem_sections)
+    CPU:StoreRegister(2, 0x7ff00000)
+end
+
+function Verify_Test1(CPU)
+    local valid = true
+    local valid_fib = 
+    {
+        [0] = 0,
+        [1] = 1,
+        [2] = 1,
+        [3] = 2,
+        [4] = 3,
+        [5] = 5,
+        [6] = 8,
+        [7] = 13,
+        [8] = 21,
+        [9] = 34
+    }
+
+    local res_addr = 0x11164
+
+    for i = 0, 9 do
+        if CPU.memory:Get(res_addr + i*4) ~= valid_fib[i] then
+            valid = false
+            break
+        end
+    end
+
+    return valid
 end

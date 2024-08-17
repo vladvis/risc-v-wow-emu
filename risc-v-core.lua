@@ -61,20 +61,10 @@ function RiscVCore:StorePC(value)
     self.registers.pc = bit.band(value, 0xffffffff)
 end
 
-function RiscVCore:ReadDWORD(address)
-    assert((address >= 0) and (address < 0x100000000), "address must be 32-bit unsigned number")
-    assert(address % 4 == 0, "address must be aligned")
-    assert(self.memory ~= nil, "memory is not initialized")
-    assert(self.memory[address] ~= nil, "address is not allocated")
-    return self.memory[address]
-end
-
-function RiscVCore:WriteDWORD(address, value)
-    assert((address >= 0) and (address < 0x100000000), "address must be 32-bit unsigned number")
-    assert((value >= 0) and (value < 0x100000000), "value must be 32-bit unsigned number")
-    assert(address % 4 == 0, "address must be aligned")
-    assert(self.memory ~= nil, "memory is not initialized")
-    self.memory[address] = value
+function RiscVCore:SetMemory(CPU, mem)
+    for k, v in pairs(mem) do
+        CPU.memory:Set(k, v)
+    end
 end
 
 function RiscVCore:InitCSR()
@@ -101,7 +91,7 @@ function RiscVCore:WriteCSR(csr_address, value)
     self.csr[csr_address] = bit.band(value, 0xffffffff)
 end
 
-function RiscVCore:InitCPU()
+function RiscVCore:InitCPU(init_handler)
     self.registers = {}
     for i=0,31 do
         self.registers[i] = 0
@@ -178,11 +168,13 @@ function RiscVCore:InitCPU()
 
     self:InitCSR()
     self.memory = RiscVMemory
+    self.memory.mem = {}
 
-    self.program = RiscVProgram
-    self.program:Init(self)
-    self.registers.pc = self.program.entrypoint
-    print(string.format("0x%x", self.registers.pc))
+    self.entrypoint = 0
+
+    init_handler(self)
+
+    self.registers.pc = self.entrypoint
 
     self.jumped = false
     self.is_running = 1
@@ -193,14 +185,8 @@ end
 function RiscVCore:Step()
     self.counter = self.counter + 1
     if self.counter == 100000 then
-        local result_addr = 0x11164
-        for i = 0, 9 do
-            local fib_number = self.memory:Read(result_addr + i*4, 4)
-            print(string.format("result[%d] = %d", i, fib_number))
-            self.is_running = 0
-        end
+        self.is_running = 0
     end
-    assert(self.program ~= nil, "missing program")
     local instruction = self.memory:Get(self.registers.pc)
     assert(instruction ~= nil, "out of bound execution")
 
@@ -286,10 +272,29 @@ function RiscVCore:PrintRegs()
     print("pc = " .. tostring(self.registers.pc))
 end
 
-RiscVCore:InitCPU()
+function RiscVCore:RunTests()
+    tests = 
+    {
+        [1] = { 
+            init = Init_Test1, 
+            verify = Verify_Test1
+        }
+    }
 
-while RiscVCore.is_running == 1 do
-    RiscVCore:Step()
+    for i = 1, table.getn(tests) do
+        local test = tests[i]
+        print(string.format("Starting test #%d...", i))
+        RiscVCore:InitCPU(test.init)
+        RiscVCore:Run()
+        local result = test.verify(self)
+        print(string.format("Test #%d result = %s", i, tostring(result)))
+    end
 end
 
-RiscVCore:PrintRegs()
+function RiscVCore:Run()
+    while RiscVCore.is_running == 1 do
+        RiscVCore:Step()
+    end
+end
+
+RiscVCore:RunTests()
