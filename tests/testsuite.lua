@@ -24,6 +24,10 @@ function RunTests()
         rv32i_comparison = {
             init = Init_rv32i_comparison,
             verify = Verify_rv32i_comparison
+        },
+        rv32i_loadstore = {
+            init = Init_rv32i_loadstore,
+            verify = Verify_rv32i_loadstore
         }
     }
 
