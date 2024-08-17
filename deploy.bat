@@ -23,3 +23,4 @@ echo "Addon path: %ADDON_PATH%"
 :: TESTS
 @MD "%ADDON_PATH%\tests"
 @COPY "tests\lua_bin\fib.lua" "%ADDON_PATH%\tests\fib.lua"
+@COPY "tests\lua_bin\testsuite.lua" "%ADDON_PATH%\tests\testsuite.lua"

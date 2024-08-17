@@ -272,29 +272,8 @@ function RiscVCore:PrintRegs()
     print("pc = " .. tostring(self.registers.pc))
 end
 
-function RiscVCore:RunTests()
-    tests = 
-    {
-        [1] = { 
-            init = Init_Test1, 
-            verify = Verify_Test1
-        }
-    }
-
-    for i = 1, table.getn(tests) do
-        local test = tests[i]
-        print(string.format("Starting test #%d...", i))
-        RiscVCore:InitCPU(test.init)
-        RiscVCore:Run()
-        local result = test.verify(self)
-        print(string.format("Test #%d result = %s", i, tostring(result)))
-    end
-end
-
 function RiscVCore:Run()
     while RiscVCore.is_running == 1 do
         RiscVCore:Step()
     end
 end
-
-RiscVCore:RunTests()
