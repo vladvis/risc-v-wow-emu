@@ -1,5 +1,5 @@
 
-function Init_Test1(CPU)
+function Init_fib(CPU)
     CPU.entrypoint = 0x10148
     CPU.stack_pointer = 0x7ff00000
     CPU.heap_start = 0x12000
@@ -1165,7 +1165,7 @@ function Init_Test1(CPU)
     CPU:StoreRegister(2, 0x7ff00000)
 end
 
-function Verify_Test1(CPU)
+function Verify_fib(CPU)
     local valid = true
     local valid_fib = 
     {

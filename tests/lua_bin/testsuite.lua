@@ -1,19 +1,18 @@
 function RunTests()
     tests = 
     {
-        [1] = { 
-            init = Init_Test1, 
-            verify = Verify_Test1
+        fib = { 
+            init = Init_fib, 
+            verify = Verify_fib
         }
     }
 
-    for i = 1, table.getn(tests) do
-        local test = tests[i]
-        print(string.format("Starting test #%d...", i))
+    for name, test in pairs(tests) do
+        print(string.format("Starting test %s...", name))
         RiscVCore:InitCPU(test.init)
         RiscVCore:Run()
         local result = test.verify(RiscVCore)
-        print(string.format("Test #%d result = %s", i, tostring(result)))
+        print(string.format("Test %s result = %s", name, tostring(result)))
     end
 end
 
