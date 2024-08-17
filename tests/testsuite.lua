@@ -5,6 +5,10 @@ function RunTests()
             init = Init_fib, 
             verify = Verify_fib
         }
+        rv32i_arithmetics = {
+            init = Init_rv32i_arithmetics,
+            verify = Verify_rv32i_arithmetics
+        }
     }
 
     for name, test in pairs(tests) do

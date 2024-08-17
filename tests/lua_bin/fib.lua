@@ -1,7 +1,7 @@
 function Init_fib(CPU)
-    self.entrypoint = 0x10170
-    self.stack_pointer = 0x7ff00000
-    self.heap_start = 0x12000
+    CPU.entrypoint = 0x10170
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x12000
 
     local mem_sections = {
     
@@ -1175,6 +1175,6 @@ function Init_fib(CPU)
         [0x7feff004] = 0x0,
         [0x12000] = 0x0,
     }
-    self:SetMemory(CPU, mem_sections)
+    CPU:SetMemory(CPU, mem_sections)
     CPU:StoreRegister("sp", 0x7ff00000)
 end
