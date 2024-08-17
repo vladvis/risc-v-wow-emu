@@ -12,6 +12,14 @@ function RunTests()
         rv32i_immediate_arithmetics = {
             init = Init_rv32i_immediate_arithmetics,
             verify = Verify_rv32i_immediate_arithmetics
+        },
+        rv32i_logical = {
+            init = Init_rv32i_logical,
+            verify = Verify_rv32i_logical
+        },
+        rv32i_shift = {
+            init = Init_rv32i_shift,
+            verify = Verify_rv32i_shift
         }
     }
 
