@@ -37,21 +37,22 @@ function BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
 
     local test = bit.rshift(funct3, 1)
 
-    if funct3 == 0 then -- BEQ | BNE
+    if test == 0 then -- BEQ | BNE
         cond = op1 == op2
-    elseif funct3 == 2 then -- BLT | BGE
+    elseif test == 2 then -- BLT | BGE
         op1 = set_sign(op1, 32)
         op2 = set_sign(op2, 32)
         cond = op1 < op2
-    elseif funct3 == 3 then -- BLTU | BGEU
+    elseif test == 3 then -- BLTU | BGEU
         cond = op1 < op2
     else
-        assert(0, "condition " .. tostring(funct3) .. " is not existed")
+        assert(false, "condition " .. tostring(funct3) .. " is not existed")
     end
 
     cond = bit.bxor(bool_to_number(cond), bit.band(funct3, 1))
+    print(string.format("op1 = 0x%x\nop2 = 0x%x\ncond = %d", op1, op2, cond))
 
-    if cond then
+    if cond == 1 then
         CPU:StorePC(CPU.registers.pc + imm_value)
     end
 end
@@ -72,7 +73,7 @@ function BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
     elseif funct3 == 5 then -- LHU
         value = CPU.memory:Read(addr, 2)
     else
-        assert(0, "load opcode " .. tostring(funct3) .. " is not existed")
+        assert(false, "load opcode " .. tostring(funct3) .. " is not existed")
     end
 
     CPU:StoreRegister(rd, value)
@@ -89,7 +90,7 @@ function BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
     elseif funct3 == 2 then -- SW
         CPU.memory:Write(addr, value, 4)
     else
-        assert(0, "store opcode " .. tostring(funct3) .. " is not existed")
+        assert(false, "store opcode " .. tostring(funct3) .. " is not existed")
     end
 end
 
@@ -119,7 +120,7 @@ function BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
             result = bit.arshift(op1, shift_amount)
         end
     else
-        assert(0, "Unsupported OP_IMM funct3: " .. tostring(funct3))
+        assert(false, "Unsupported OP_IMM funct3: " .. tostring(funct3))
     end
 
     CPU:StoreRegister(rd, result)
@@ -136,7 +137,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
         elseif funct7 == 0x20 then -- SUB
             result = op1 - op2
         else
-            assert(0, "Unsupported OP funct7: " .. tostring(funct7))
+            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x1 then -- SLL
         result = bit.lshift(op1, bit.band(op2, 0x1F))
@@ -152,14 +153,14 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
         elseif funct7 == 0x20 then -- SRA
             result = bit.arshift(op1, bit.band(op2, 0x1F))
         else
-            assert(0, "Unsupported OP funct7: " .. tostring(funct7))
+            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x6 then -- OR
         result = bit.bor(op1, op2)
     elseif funct3 == 0x7 then -- AND
         result = bit.band(op1, op2)
     else
-        assert(0, "Unsupported OP funct3: " .. tostring(funct3))
+        assert(false, "Unsupported OP funct3: " .. tostring(funct3))
     end
 
     CPU:StoreRegister(rd, result)
@@ -171,7 +172,7 @@ function BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
     elseif funct3 == 0x1 then -- FENCE.I
         return nil
     else
-        assert(0, "Unsupported MISC_MEM funct3: " .. tostring(funct3))
+        assert(false, "Unsupported MISC_MEM funct3: " .. tostring(funct3))
     end
 end
 
@@ -182,15 +183,16 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
             if syscall_num == 93 then -- exit
                 CPU.is_running = 0
                 CPU.exit_code = CPU:LoadRegister(10)
+                print(string.format("Got EXIT(%d)", CPU.exit_code))
             else
-                assert(0, "syscall " .. tostring(syscall_num) .. " is not implemented")
+                assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end
         elseif imm_value == 1 then -- EBREAK
             -- Handle a breakpoint. You can implement a debug trap or halt the emulator.
             print("EBREAK encountered at PC: " .. tostring(CPU.registers.pc))
             CPU.is_running = 0
         else
-            assert(0, "Unsupported SYSTEM funct12: " .. tostring(imm_value))
+            assert(false, "Unsupported SYSTEM funct12: " .. tostring(imm_value))
         end
     elseif funct3 == 0x1 then -- CSRRW
         local csr_value = CPU:ReadCSR(imm_value)

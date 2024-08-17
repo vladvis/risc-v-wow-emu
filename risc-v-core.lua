@@ -249,7 +249,7 @@ function RiscVCore:Step()
         self.opcodes[opcode].handler(self, rd, funct3, rs1, rs2, funct7)
 
     else
-        assert(0, "opcode encoding " .. tostring(self.opcodes[opcode].type) .. " is not implemented")
+        assert(false, "opcode encoding " .. tostring(self.opcodes[opcode].type) .. " is not implemented")
     end
 
     if self.jumped then
@@ -261,9 +261,9 @@ end
 
 function RiscVCore:PrintRegs()
     for i = 0, 31 do
-        print("x" .. tostring(i) .. " = " .. tostring(self.registers[i]))
+        print(string.format("x%d = 0x%x", i, self.registers[i]))
     end
-    print("pc = " .. tostring(self.registers.pc))
+    print(string.format("pc = 0x%x", self.registers.pc))
 end
 
 function RiscVCore:Run()

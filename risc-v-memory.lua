@@ -36,7 +36,7 @@ function RiscVMemory:Read(addr, vsize)
         local misalign = addr % 4
         return bit.band(bit.rshift(self:Get(addr - misalign), misalign*8), 0xff)
     else
-        assert(0, "vsize " .. tostring(vsize) .. " is not supported")
+        assert(false, "vsize " .. tostring(vsize) .. " is not supported")
     end     
 end
 
@@ -95,7 +95,7 @@ function RiscVMemory:Write(addr, value, vsize)
             self:Set(addr - 3, val)
         end
     else
-        assert(0, "vsize " .. tostring(vsize) .. " is not supported")
+        assert(false, "vsize " .. tostring(vsize) .. " is not supported")
     end
 end
 
