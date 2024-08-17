@@ -4,10 +4,14 @@ function RunTests()
         fib = { 
             init = Init_fib, 
             verify = Verify_fib
-        }
+        },
         rv32i_arithmetics = {
             init = Init_rv32i_arithmetics,
             verify = Verify_rv32i_arithmetics
+        },
+        rv32i_immediate_arithmetics = {
+            init = Init_rv32i_immediate_arithmetics,
+            verify = Verify_rv32i_immediate_arithmetics
         }
     }
 
