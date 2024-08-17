@@ -28,6 +28,10 @@ function RunTests()
         rv32i_loadstore = {
             init = Init_rv32i_loadstore,
             verify = Verify_rv32i_loadstore
+        },
+        rv32i_controlflow = {
+            init = Init_rv32i_controlflow,
+            verify = Verify_rv32i_controlflow
         }
     }
 
