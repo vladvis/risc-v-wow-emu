@@ -36,6 +36,10 @@ function RunTests()
         rv32m = {
             init = Init_rv32m,
             verify = Verify_rv32m
+        },
+        rv32f = {
+            init = Init_rv32f,
+            verify = Verify_rv32f
         }
     }
 

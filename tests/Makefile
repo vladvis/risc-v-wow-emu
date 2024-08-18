@@ -16,7 +16,7 @@ all: $(BIN_DIR) $(OUT_FILES)
 $(BIN_DIR)/%: $(TESTS_DIR)/%
 	$(MAKE) -C $< 
 	dir_name=$(shell basename $<); \
-	cat $</out | python $(SCRIPT) $$dir_name > $@.lua
+	cat $</out | python3 $(SCRIPT) $$dir_name > $@.lua
 	cp $</verify.lua $@_verify.lua
 	
 # Ensure the bin directory exists
