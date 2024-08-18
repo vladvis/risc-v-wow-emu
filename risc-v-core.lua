@@ -308,7 +308,7 @@ function RiscVCore:Step()
 
         self.opcodes[opcode].handler(self, rd, funct3, rs1, rs2, funct7)
 
-    elseif self.opecodes[opcode].type == "R4"
+    elseif self.opecodes[opcode].type == "R4" then
 
         local rd = decode_rd(instruction)
         local funct3 = decode_funct3(instruction)
