@@ -35,6 +35,13 @@ function RiscVMemory:Read(addr, vsize)
     elseif vsize == 1 then
         local misalign = addr % 4
         return bit.band(bit.rshift(self:Get(addr - misalign), misalign*8), 0xff)
+    elseif vsize == 'float' then
+        local int_value = self:Read(addr, 4)
+        return bits_to_float(int_value) -- конвертируем 32-битное целое число в float
+    elseif vsize == 'double' then
+        local lo = self:Read(addr, 4)
+        local hi = self:Read(addr + 4, 4)
+        return bits_to_double(hi, lo) -- конвертируем 64-битное целое число в double
     else
         assert(false, "vsize " .. tostring(vsize) .. " is not supported")
     end     
@@ -94,6 +101,13 @@ function RiscVMemory:Write(addr, value, vsize)
             val = bit.bor(val, bit.band(bit.lshift(value, 24), 0xff000000))
             self:Set(addr - 3, val)
         end
+    elseif vsize == 'float' then
+        local int_value = float_to_bits(value) -- конвертируем float в 32-битное целое число
+        self:Write(addr, int_value, 4)
+    elseif vsize == 'double' then
+        local hi, lo = double_to_bits(value) -- конвертируем double в 64-битное целое число
+        self:Write(addr, lo, 4)
+        self:Write(addr + 4, hi, 4)
     else
         assert(false, "vsize " .. tostring(vsize) .. " is not supported")
     end

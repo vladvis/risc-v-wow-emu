@@ -1,13 +1,33 @@
 function FPU_Load(CPU, rd, funct3, rs1, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
-    local value = CPU.memory:Read(addr, 4)
+    local value = nil
+
+    if funct3 == 0x2 then
+        -- FLW: Load 32-bit float
+        value = CPU.memory:Read(addr, 'float')
+    elseif funct3 == 0x3 then
+        -- FLD: Load 64-bit double
+        value = CPU.memory:Read(addr, 'double')
+    else
+        assert(false, "Unsupported FPU load funct3: " .. tostring(funct3))
+    end
+
     CPU.fregisters[rd].value = value
 end
 
 function FPU_Store(CPU, funct3, rs1, rs2, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = CPU.fregisters[rs2].value
-    CPU.memory:Write(addr, value, 4) -- не, ну тут chat gpt нахуй идёт: CPU.memory:Write() не умеет сохранять float-ы
+
+    if funct3 == 0x2 then
+        -- FSW: Store 32-bit float
+        CPU.memory:Write(addr, value, 'float')
+    elseif funct3 == 0x3 then
+        -- FSD: Store 64-bit double
+        CPU.memory:Write(addr, value, 'double')
+    else
+        assert(false, "Unsupported FPU store funct3: " .. tostring(funct3))
+    end
 end
 
 function FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
