@@ -7,7 +7,7 @@ end
 function FPU_Store(CPU, funct3, rs1, rs2, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = CPU.fregisters[rs2].value
-    CPU.memory:Write(addr, value, 4)
+    CPU.memory:Write(addr, value, 4) -- не, ну тут chat gpt нахуй идёт: CPU.memory:Write() не умеет сохранять float-ы
 end
 
 function FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
