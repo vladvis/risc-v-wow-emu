@@ -125,48 +125,6 @@ function BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
     CPU:StoreRegister(rd, result)
 end
 
---[[
-function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
-    local op1 = CPU:LoadRegister(rs1)
-    local op2 = CPU:LoadRegister(rs2)
-    local result = nil
-
-    if funct3 == 0x0 then
-        if funct7 == 0x00 then -- ADD
-            result = op1 + op2
-        elseif funct7 == 0x20 then -- SUB
-            result = op1 - op2
-        else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
-        end
-    elseif funct3 == 0x1 then -- SLL
-        result = bit.lshift(op1, bit.band(op2, 0x1F))
-    elseif funct3 == 0x2 then -- SLT
-        result = set_sign(op1, 32) < set_sign(op2, 32) and 1 or 0
-    elseif funct3 == 0x3 then -- SLTU
-        result = op1 < op2 and 1 or 0
-    elseif funct3 == 0x4 then -- XOR
-        result = bit.bxor(op1, op2)
-    elseif funct3 == 0x5 then
-        if funct7 == 0x00 then -- SRL
-            result = bit.rshift(op1, bit.band(op2, 0x1F))
-        elseif funct7 == 0x20 then -- SRA
-            result = bit.arshift(op1, bit.band(op2, 0x1F))
-        else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
-        end
-    elseif funct3 == 0x6 then -- OR
-        result = bit.bor(op1, op2)
-    elseif funct3 == 0x7 then -- AND
-        result = bit.band(op1, op2)
-    else
-        assert(false, "Unsupported OP funct3: " .. tostring(funct3))
-    end
-
-    CPU:StoreRegister(rd, result)
-end
---]]
-
 function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
     local op1 = CPU:LoadRegister(rs1)
     local op2 = CPU:LoadRegister(rs2)
@@ -189,7 +147,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             local signed_op1 = set_sign(op1, 32)
             local signed_op2 = set_sign(op2, 32)
             local full_result = signed_op1 * signed_op2
-            result = set_unsign(bit.rshift(full_result, 32), 32)
+            result = math.floor(set_unsign(full_result, 64) / 0x100000000)
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
@@ -200,7 +158,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             local signed_op1 = set_sign(op1, 32)
             local unsigned_op2 = op2
             local full_result = signed_op1 * unsigned_op2
-            result = set_unsign(bit.rshift(full_result, 32), 32)
+            result = math.floor(set_unsign(full_result, 64) / 0x100000000)
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
@@ -209,7 +167,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             result = bit.band(op1 < op2 and 1 or 0, 0xFFFFFFFF)
         elseif funct7 == 0x01 then -- MULHU
             local full_result = op1 * op2
-            result = bit.rshift(full_result, 32)
+            result = math.floor(full_result / 0x100000000)
         else
             assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
