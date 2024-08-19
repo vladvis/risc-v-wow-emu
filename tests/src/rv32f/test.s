@@ -126,7 +126,7 @@ fmsub_pass:
     # Test 8: FNMADD.S - Negative Multiply-Add
     fnmadd.s ft3, ft0, ft1, ft2  # -(1.0 * 2.0) + 3.0 = 1.0
     fmv.x.w t4, ft3           # Move result back to integer register
-    li t5, 0x3f800000         # 1.0 in IEEE 754 single-precision
+    li t5, 0xc0a00000         # -5.0 in IEEE 754 single-precision
     beq t4, t5, fnmadd_pass
 
 fnmadd_fail:
