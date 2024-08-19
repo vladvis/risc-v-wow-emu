@@ -1,12 +1,13 @@
 #include <math.h>
 
 #define N_SPLIT 1024
+#define SYS_exit 93
 
 float func(float x) {
-    return (log(x) + sin(x)) / sqrt(x);
+    return sin(x) / x;
 }
 
-float simpsons(float ll, float ul) {
+volatile simpsons(float ll, float ul) {
     float stepSize = (ul - ll) / N_SPLIT;
 
     float integration = func(ll) + func(ul);
@@ -22,11 +23,23 @@ float simpsons(float ll, float ul) {
     return integration;
 }
 
-int main()
+__attribute__((noreturn)) void exit(int code) {
+    asm volatile (
+        "li a7, %0\n"
+        "mv a0, %1\n"
+        "ecall\n"
+        :
+        : "i" (SYS_exit), "r" (code)
+        : "a0", "a7"
+    );
+    while (1) {}
+}
+
+void _start() {
 {
     float lower_limit = 1;
     float upper_limit = 100;
     float result = simpsons(lower_limit, upper_limit);
-    const float ok = 56.65020751953125f;
-    return fabs(result - ok) < 1e-4;
+    const float ok = 0.61614239215850830078125;
+    exit(fabs(result - ok) < 1e-4);
 }
