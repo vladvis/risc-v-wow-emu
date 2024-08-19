@@ -7,7 +7,7 @@ float func(float x) {
     return sin(x) / x;
 }
 
-volatile simpsons(float ll, float ul) {
+float simpsons(float ll, float ul) {
     float stepSize = (ul - ll) / N_SPLIT;
 
     float integration = func(ll) + func(ul);

@@ -4,7 +4,7 @@ CFLAGS = -Wall -O0 -nostdlib -no-pie
 LDFLAGS = -lm -static
 
 # Define the source and output files
-ASM_SRC = test.s
+ASM_SRC = test.c
 OUTPUT = out 
 
 # Define the simulator
