@@ -2,4 +2,5 @@ rv32i-base-instructions.lua
 risc-v-float-conversion.lua
 risc-v-fpu.lua
 risc-v-memory.lua
+frame.lua
 risc-v-core.lua
