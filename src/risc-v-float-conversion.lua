@@ -56,12 +56,12 @@ function double_to_bits(d)
         mantissa = 0
         exponent = 0
     else
-        mantissa = (mantissa * 2 - 1) * math.ldexp(0.5, 52)
+        mantissa = (mantissa * 2 - 1) * (2^52)
         exponent = exponent + 1022
     end
 
-    local lo = mantissa % 0x100000000
-    local hi = bit.bor(bit.lshift(sign, 31), bit.lshift(exponent, 20), math.floor(mantissa / 0x100000000))
+    local lo = mantissa % (2^32)
+    local hi = bit.bor(bit.lshift(sign, 31), bit.lshift(exponent, 20), math.floor(mantissa / (2^32)))
 
     return hi, lo
 end
@@ -69,30 +69,32 @@ end
 function bits_to_double(hi, lo)
     local sign = bit.band(bit.rshift(hi, 31), 0x1)
     local exponent = bit.band(bit.rshift(hi, 20), 0x7FF)
-    local mantissa = bit.band(hi, 0xFFFFF) * 0x100000000 + lo
-
+    local mantissa_hi = bit.band(hi, 0xFFFFF)
+    local mantissa_lo = lo
+    
+    local mantissa = mantissa_hi * (2^32) + mantissa_lo
+    
     if exponent == 0 then
-        if mantissa == 0 then
-            return 0
-        else
-            mantissa = mantissa / math.ldexp(0.5, 52)
-            exponent = -1022
-        end
-    elseif exponent == 2047 then
-        if mantissa == 0 then
-            return (sign == 1) and -math.huge or math.huge
-        else
-            return 0/0 -- NaN
-        end
+       if mantissa == 0 then
+          return 0.0
+       else
+          exponent = 1
+          mantissa = mantissa / (2^52)
+       end
+    elseif exponent == 0x7FF then
+       if mantissa == 0 then
+          return sign == 1 and -1/0 or 1/0
+       else
+          return 0/0  -- NaN
+       end
     else
-        mantissa = (mantissa / math.ldexp(0.5, 52)) + 1
-        exponent = exponent - 1023
+       mantissa = 1 + mantissa / (2^52)
     end
-
-    local result = math.ldexp(mantissa, exponent)
+    
+    local result = math.ldexp(mantissa, exponent - 1023)
     if sign == 1 then
-        result = -result
+       result = -result
     end
-
+    
     return result
-end
+ end
