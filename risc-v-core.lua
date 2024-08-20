@@ -79,24 +79,76 @@ function RiscVCore:InitCSR()
     self.csr = {}
 
     -- Initialize commonly used CSRs (e.g., machine mode)
-    self.csr[0x300] = 0x00000000 -- mstatus: Machine status register
-    self.csr[0x305] = 0x00000000 -- mtvec: Machine trap-vector base-address register
-    self.csr[0x341] = 0x00000000 -- mepc: Machine exception program counter
-    self.csr[0x342] = 0x00000000 -- mcause: Machine cause register
-    self.csr[0x343] = 0x00000000 -- mtval: Machine trap value register
-    self.csr[0x344] = 0x00000000 -- mip: Machine interrupt pending
-    self.csr[0x304] = 0x00000000 -- mie: Machine interrupt enable
+    self.csr[0xc00] = 0x00000000 -- cycle
+    self.csr[0xc01] = 0x00000000 -- time
+    self.csr[0xc02] = 0x00000000 -- instret
+    self.csr[0xc80] = 0x00000000 -- cycleh
+    self.csr[0xc81] = 0x00000000 -- timeh
+    self.csr[0xc82] = 0x00000000 -- instreth
     -- Add more CSRs as needed...
 end
 
+function RiscVCore:EncodeFRM()
+    return self.fcsr.rm
+end
+
+function RiscVCore:EncodeFFLAGS()
+    local result = 0
+    result = result + (self.fcsr.nx and 0x01 or 0x0)
+    result = result + (self.fcsr.uf and 0x02 or 0x0)
+    result = result + (self.fcsr.of and 0x04 or 0x0)
+    result = result + (self.fcsr.dz and 0x08 or 0x0)
+    result = result + (self.fcsr.nv and 0x10 or 0x0)
+    return result
+end
+
+function RiscVCore:EncodeFCSR()
+    return self:EncodeFFLAGS + bit.lshift(self:EncodeFRM(), 5)
+end
+
+function RiscVCore:DecodeFRM(value)
+    self.fcsr.rm = value
+end
+
+function RiscVCore:DecodeFFLAGS(value)
+    self.fcsr.nx = (bit.band(value, 0x01) ~= 0) and true or false
+    self.fcsr.uf = (bit.band(value, 0x02) ~= 0) and true or false
+    self.fcsr.of = (bit.band(value, 0x04) ~= 0) and true or false
+    self.fcsr.dz = (bit.band(value, 0x08) ~= 0) and true or false
+    self.fcsr.nv = (bit.band(value, 0x10) ~= 0) and true or false
+end
+
+function RiscVCore:DecodeFCSR(value)
+    local v1 = bit.band(value, 0x1f)
+    local v2 = bit.band(bit.rshift(value, 5), 0x7)
+    self:DecodeFFLAGS(v1)
+    self:DecodeFRM(v2)
+end
+
 function RiscVCore:ReadCSR(csr_address)
-    assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
-    return self.csr[csr_address]
+    if csr_address == 0x001 then
+        return self:EncodeFFLAGS()
+    elseif csr_address == 0x002 then
+        return self:EncodeFRM()
+    elseif csr_address == 0x003 then
+        return self:EncodeFCSR()
+    else
+        assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+        return self.csr[csr_address]
+    end
 end
 
 function RiscVCore:WriteCSR(csr_address, value)
-    assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
-    self.csr[csr_address] = bit.band(value, 0xffffffff)
+    if csr_address == 0x001 then
+        self:DecodeFFLAGS(value)
+    elseif csr_address == 0x002 then
+        self:DecodeFRM(value)
+    elseif csr_address == 0x003 then
+        self:DecodeFCSR(value)
+    else
+        assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+        self.csr[csr_address] = bit.band(value, 0xffffffff)
+    end
 end
 
 function RiscVCore:InitCPU(init_handler)
@@ -107,7 +159,7 @@ function RiscVCore:InitCPU(init_handler)
         self.fregisters[i] = { flen = 32, value = 0 }
     end
     self.fcsr = {
-        rounding_mode = 0,
+        rm = 0, -- rounding mode
         nv = false, -- invalid operation
         dz = false, -- divide by zero
         of = false, -- overflow
