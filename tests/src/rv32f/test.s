@@ -126,7 +126,7 @@ fmsub_pass:
     # Test 8: FNMADD.S - Negative Multiply-Add
     fnmadd.s ft3, ft0, ft1, ft2  # -(1.0 * 2.0) + 3.0 = 1.0
     fmv.x.w t4, ft3           # Move result back to integer register
-    li t5, 0x3f800000         # 1.0 in IEEE 754 single-precision
+    li t5, 0xc0a00000         # -5.0 in IEEE 754 single-precision
     beq t4, t5, fnmadd_pass
 
 fnmadd_fail:
@@ -136,9 +136,9 @@ fnmadd_pass:
     addi a0, a0, 1            # Increment return value if test passed
 
     # Test 9: FNMSUB.S - Negative Multiply-Subtract
-    fnmsub.s ft3, ft0, ft1, ft2  # -(1.0 * 2.0) - 3.0 = -5.0
+    fnmsub.s ft3, ft0, ft1, ft2  # -(1.0 * 2.0) + 3.0 = 1.0
     fmv.x.w t4, ft3           # Move result back to integer register
-    li t5, 0xc0a00000         # -5.0 in IEEE 754 single-precision
+    li t5, 0x3f800000         # 1.0 in IEEE 754 single-precision
     beq t4, t5, fnmsub_pass
 
 fnmsub_fail:
@@ -323,7 +323,7 @@ fmax_s_pass:
     li t0, 0x7f800000         # +Infinity in IEEE 754 single-precision
     fmv.w.x ft0, t0           # Move +Infinity to floating-point register
     fclass.s t1, ft0          # Classify the floating-point number
-    li t2, 0x01000000         # Class for +Infinity
+    li t2, 0x80               # Class for +Infinity
     beq t1, t2, fclass_s_pass
 
 fclass_s_fail:
