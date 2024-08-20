@@ -103,7 +103,7 @@ function RiscVCore:EncodeFFLAGS()
 end
 
 function RiscVCore:EncodeFCSR()
-    return self:EncodeFFLAGS + bit.lshift(self:EncodeFRM(), 5)
+    return self:EncodeFFLAGS() + bit.lshift(self:EncodeFRM(), 5)
 end
 
 function RiscVCore:DecodeFRM(value)
@@ -360,7 +360,7 @@ function RiscVCore:Step()
 
         self.opcodes[opcode].handler(self, rd, funct3, rs1, rs2, funct7)
 
-    elseif self.opecodes[opcode].type == "R4" then
+    elseif self.opcodes[opcode].type == "R4" then
 
         local rd = decode_rd(instruction)
         local funct3 = decode_funct3(instruction)

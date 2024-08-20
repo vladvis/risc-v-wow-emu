@@ -76,8 +76,8 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
     local op2 = CPU.fregisters[rs2].value
     local result = nil
 
-    local is_double == bit.band(funct7, 1)
-    local funct6 = bit.rfshift(funct7, 1)
+    local is_double = bit.band(funct7, 1)
+    local funct6 = bit.rshift(funct7, 1)
 
     if funct6 == 0x00 then -- FADD.S | FADD.D
         result = op1 + op2
@@ -95,7 +95,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         else
             assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
         end
-    elseif funct6 == 0x10 then
+    elseif funct6 == 0x08 then
         if funct3 == 0x00 then -- FSGNJ.S | FSGNJ.D
             result = math.abs(op1) * get_sign(op2)
         elseif funct3 == 0x01 then -- FSGNJN.S | FSGNJN.D
@@ -117,7 +117,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         else
             assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
         end
-    elseif funct6 == 0x20 then -- FCVT.S.D | FCVT.D.S
+    elseif funct6 == 0x10 then -- FCVT.S.D | FCVT.D.S
         result = op1
     elseif funct6 == 0x30 then -- (ATTENTION: rd is integer)
         local rm = funct3 == 0x07 and CPU.fcsr.rm or funct3
@@ -187,7 +187,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
     elseif funct6 == 0x3c then -- FMV.W.X (ATTENTION: rs1 is integer)
         result = bits_to_float(CPU:LoadRegister(rs1))
     else
-        assert(false, "Unsupported FP operation funct7: " .. tostring(funct7))
+        assert(false, "Unsupported FP operation funct7: " .. tostring(funct7) .. " " .. tostring(funct6))
     end
 
     if funct6 == 0x38 or funct6 == 0x30 or funct6 == 0x28 then
