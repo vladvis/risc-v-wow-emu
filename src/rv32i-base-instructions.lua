@@ -248,6 +248,21 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                 CPU.is_running = 0
                 CPU.exit_code = CPU:LoadRegister(10)
                 print(string.format("Got EXIT(%d)", CPU.exit_code))
+            elseif syscall_num == 64 then -- write
+                local s = ""
+                local fd = CPU:LoadRegister(10)
+                local buf = CPU:LoadRegister(11)
+                local count = CPU:LoadRegister(12)
+                for i = 0, count-1 do
+                    s = s .. string.char(CPU.memory:Read(buf + i, 1))
+                end
+                if fd == 1 then -- stdout
+                    print("RISC-V CPU stdout: " .. s)
+                elseif fd == 2 then -- stderr
+                    print("RISC-V CPU stderr: " .. s)
+                else
+                    assert(false, "Unsupported fd")
+                end
             else
                 assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end

@@ -1,3 +1,4 @@
+test_frame.lua
 rv32i-base-instructions.lua
 risc-v-float-conversion.lua
 risc-v-fpu.lua
