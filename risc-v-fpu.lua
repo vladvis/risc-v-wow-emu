@@ -152,7 +152,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         else
             assert(false, "invalid rs2 value: " .. tostring(rs2))
         end
-    elseif funct6 == 0x34 then -- (FCVT.S.W | FCVT.S.WU) | (FCVT.D.W | FCVT.D.WU) (ATTENTION: rs1 is integer)
+    elseif funct6 == 0x34 then -- (ATTENTION: rs1 is integer)
         if rs2 == 0x00 then -- FCVT.S.W | FCVT.D.W
             result = set_sign(CPU:LoadRegister(rs1), 32)
         elseif rs2 == 0x01 then -- FCVT.S.WU | FCVT.D.WU
@@ -165,19 +165,19 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
             result = float_to_bits(op1)
         elseif funct3 == 0x01 then -- FCLASS.S | FCLASS.D
             if op1 == INF_INV then
-                result = 0
+                result = bit.lshift(1, 0)
             elseif op1 == MINUS_Z then
-                result = 3
+                result = bit.lshift(1, 3)
             elseif op1 == 0 then
-                result = 4
+                result = bit.lshift(1, 4)
             elseif op1 == INF then
-                result = 7
+                result = bit.lshift(1, 7)
             elseif op1 == NAN then
-                result = 8
+                result = bit.lshift(1, 8)
             elseif op1 < 0 then
-                result = 1
+                result = bit.lshift(1, 1)
             elseif op1 > 0 then
-                result = 6
+                result = bit.lshift(1, 6)
             else
                 assert(false, "WOOT?")
             end

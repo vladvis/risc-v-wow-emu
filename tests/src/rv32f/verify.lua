@@ -1,3 +1,3 @@
 function Verify_rv32f(CPU)
-    return CPU.exit_fode == 24
+    return CPU.exit_code == 24
 end

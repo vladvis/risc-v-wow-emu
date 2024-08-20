@@ -41,10 +41,10 @@ function RunTests()
             init = Init_rv32f,
             verify = Verify_rv32f
         },
-	simpsons_fp_integral = {
-	    init = Init_simpsons_fp_integral,
-	    verify = Verify_simpsons_fp_integral
-	}
+        simpsons_fp_integral = {
+            init = Init_simpsons_fp_integral,
+            verify = Verify_simpsons_fp_integral
+        }
     }
 
     for name, test in pairs(tests) do

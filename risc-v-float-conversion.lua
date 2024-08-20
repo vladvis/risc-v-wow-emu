@@ -1,4 +1,7 @@
 function float_to_bits(f)
+    if f == 1/0 then
+        return 0x7f800000
+    end
     local sign = 0
     if f < 0 then
         sign = 1
@@ -24,28 +27,21 @@ function bits_to_float(b)
 
     if exponent == 0 then
         if mantissa == 0 then
-            return 0
+            return 0.0
         else
-            mantissa = mantissa / math.ldexp(0.5, 23)
-            exponent = -126
+            mantissa = mantissa / math.ldexp(1.0, 23)
+            return math.ldexp(mantissa, -126) * (sign == 1 and -1 or 1)
         end
     elseif exponent == 255 then
         if mantissa == 0 then
             return (sign == 1) and -math.huge or math.huge
         else
-            return 0/0 -- NaN
+            return 0/0
         end
     else
-        mantissa = (mantissa / math.ldexp(0.5, 23)) + 1
-        exponent = exponent - 127
+        mantissa = 1.0 + mantissa / math.ldexp(1.0, 23)
+        return math.ldexp(mantissa, exponent - 127) * (sign == 1 and -1 or 1)
     end
-
-    local result = math.ldexp(mantissa, exponent)
-    if sign == 1 then
-        result = -result
-    end
-
-    return result
 end
 
 function double_to_bits(d)
