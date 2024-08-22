@@ -58,6 +58,7 @@ for i = 1, 4 do
     local PartFrame = Mixin(CreateFrame("Frame", nil, UIParent), FrameBufferTestMixin)
     PartFrame:OnLoad()
     PartFrame:SetPoint("CENTER", 0, -150 + i * 100)
+    PartFrame:Hide()
     table.insert(FrameBufferTestFrameParted, PartFrame)
 end
 
@@ -66,6 +67,30 @@ function GetPixel(x, y)
     local PartN = 4 - math.floor(y / PartHeight)
     local localy = y % PartHeight
     return FrameBufferTestFrameParted[PartN].FrameBuffer[localy * 320 + x + 1]
+end
+
+function RenderFrame(CPU, framebuffer_addr)
+    local PartHeight = 50
+
+    for i = 0, 320-1 do
+        for j = 0, 200-1 do
+            local offset = j + i*200
+            local data = CPU.memory:Read(framebuffer_addr + offset, 1)
+            local color = vga_to_rgb[data]
+            local pixel = GetPixel(i, j)
+            pixel:SetColorTexture(unpack(color))
+        end
+    end
+end
+
+function ToggleWindow()
+    for i = 1, 4 do
+        if FrameBufferTestFrameParted[i]:IsVisible() then
+            FrameBufferTestFrameParted[i]:Hide()
+        else
+            FrameBufferTestFrameParted[i]:Show()
+        end
+    end
 end
 
 local function callback()
@@ -82,4 +107,12 @@ local function callback()
     -- RunNextFrame(callback)
 end
 
-RunNextFrame(callback)
+local function callback2()
+    ToggleWindow()
+
+    C_Timer.After(2, callback2)
+end
+
+
+-- RunNextFrame(callback)
+-- RunNextFrame(callback2)

@@ -263,6 +263,11 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                 else
                     assert(false, "Unsupported fd")
                 end
+            elseif syscall_num == 101 then -- togglewindow
+                
+            elseif syscall_num == 102 then -- render_framebuffer
+                local framebuffer_addr = CPU:LoadRegister(10)
+                RenderFrame(self, framebuffer_addr)
             else
                 assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end
