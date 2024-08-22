@@ -20,7 +20,7 @@ void volatile wow_toggle_window() {
     );
 }
 
-void wow_send_framebuffer(uint8_t grid[HEIGHT][WIDTH]) {
+void wow_send_framebuffer(uint8_t grid[HEIGHT * WIDTH]) {
     asm volatile (
         "li a7, %0\n"
         "mv a0, %1\n"
@@ -54,7 +54,7 @@ int main() {
 
     int max_iter = 10;
     double center_real = -0.75, center_imag = 0.1;
-    uint8_t grid[HEIGHT][WIDTH];
+    uint8_t grid[HEIGHT * WIDTH];
 
     for (int zoom = 1; zoom <= 100; zoom++) {
         double range = 2.0 / (1.0f + zoom / 10.0f);
@@ -69,7 +69,7 @@ int main() {
             for (int x = 0; x < WIDTH; x++) {
                 double real = real_start + x * real_step;
                 double imag = imag_start + y * imag_step;
-                grid[y][x] = is_in_mandelbrot_set(real, imag, max_iter);
+                grid[y * WIDTH + x] = is_in_mandelbrot_set(real, imag, max_iter);
             }
         }
         wow_send_framebuffer(grid);
