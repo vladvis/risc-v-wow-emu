@@ -11,6 +11,12 @@ function RiscVMemory:Set(addr, value)
     self.mem[addr] = value
 end
 
+function RiscVMemory:InitMemoryRange(addr_start, addr_end)
+    for i = addr_start, addr_end, 4 do
+        self:Set(i, 0)
+    end
+end
+
 function RiscVMemory:Read(addr, vsize)
     if vsize == 4 then
         if addr % 4 == 0 then -- aligned read
