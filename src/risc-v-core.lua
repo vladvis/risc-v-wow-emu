@@ -290,6 +290,12 @@ function RiscVCore:InitCPU(init_handler)
 
     self.jumped = false
     self.is_running = 1
+    self.counter = 0
+end
+
+function Resume()
+    RiscVCore.is_running = 1
+    RiscVCore:Run()
 end
 
 function RiscVCore:Step()
@@ -380,6 +386,12 @@ function RiscVCore:Step()
     else
         self.registers.pc = self.registers.pc + 4
     end
+
+    --[[self.counter = self.counter + 1
+    if self.counter % 1000 == 0 then
+        self.is_running = 0
+        C_Timer.After(0.1, Resume)
+    end--]]
 end
 
 function RiscVCore:PrintRegs()

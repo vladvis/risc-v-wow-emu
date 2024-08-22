@@ -76,6 +76,10 @@ function RenderFrame(CPU, framebuffer_addr)
         for j = 0, 200-1 do
             local offset = j + i*200
             local data = CPU.memory:Read(framebuffer_addr + offset, 1)
+            if data ~= 0 then
+                print(i)
+                print(j)
+            end
             local color = vga_to_rgb[data]
             local pixel = GetPixel(i, j)
             pixel:SetColorTexture(unpack(color))
@@ -85,11 +89,7 @@ end
 
 function ToggleWindow()
     for i = 1, 4 do
-        if FrameBufferTestFrameParted[i]:IsVisible() then
-            FrameBufferTestFrameParted[i]:Hide()
-        else
-            FrameBufferTestFrameParted[i]:Show()
-        end
+        FrameBufferTestFrameParted[i]:Show()
     end
 end
 

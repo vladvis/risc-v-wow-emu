@@ -264,10 +264,15 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                     assert(false, "Unsupported fd")
                 end
             elseif syscall_num == 101 then -- togglewindow
-                
+                print("togglewindow was called")
+                ToggleWindow()
             elseif syscall_num == 102 then -- render_framebuffer
+                print("render_framebuffer was called")
                 local framebuffer_addr = CPU:LoadRegister(10)
-                RenderFrame(self, framebuffer_addr)
+                print(string.format("0x%x", framebuffer_addr))
+                RenderFrame(CPU, framebuffer_addr)
+                CPU.is_running = 0
+                C_Timer.After(0.1, Resume)
             else
                 assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end
