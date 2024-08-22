@@ -41,9 +41,9 @@ def load_elf_to_memory(elf_data, stack_size=0x1000, stack_start=0x7ff00000):
             heap_start = section_addr + section_size
 
     # Initialize the stack region with zeros
-    for i in range(0, stack_size, 4):
-        address = stack_start - i
-        memory_map[address] = 0x0
+    #for i in range(0, stack_size, 4):
+    #    address = stack_start - i
+    #    memory_map[address] = 0x0
 
     # Set the initial stack pointer (to the top of the stack)
     initial_stack_pointer = stack_start

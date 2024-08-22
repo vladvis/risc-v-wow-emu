@@ -9,4 +9,5 @@ function Init_{{ name }}(CPU)
     }
     CPU:SetMemory(CPU, mem_sections)
     CPU:StoreRegister(2, {{ stack_pointer | hex }})
+    CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end
