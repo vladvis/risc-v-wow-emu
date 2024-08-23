@@ -101,11 +101,13 @@ int main() {
         ptrs[i] = malloc(64); // Allocate 64 bytes
         assert(ptrs[i] != NULL);
         memset(ptrs[i], i % 256, 64); // Fill with a pattern
+        // printf("%d %d\n", i, ptrs[i][15]);
     }
 
     // Verify and Free
     for (int i = 0; i < NUM_PTRS; i++) {
         for (int j = 0; j < 64; j++) {
+            //printf("%d %d\n", i, ptrs[i][15]);
             assert(ptrs[i][j] == (char)(i % 256));
         }
         free(ptrs[i]);
