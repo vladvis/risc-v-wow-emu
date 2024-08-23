@@ -12,7 +12,11 @@ RV32_KEYMAP = {
     SPACE = 0x1002,
     LALT = 0x1003,
     ENTER = 0x1004,
-    ESCAPE = 0x1005
+    ESCAPE = 0x1005,
+    LEFT = 0x2000,
+    RIGHT = 0x2001,
+    UP = 0x2002,
+    DOWN = 0x2003
 }
 
 for i = 0, 255 do
@@ -78,12 +82,14 @@ for i = 1, 4 do
 end
 
 function FrameOnKeyDown(event, key)
+    print(string.format("key down (%s)", key))
     if RV32_KEYMAP[key] ~= nil then
         RiscVCore.pressed_keys[RV32_KEYMAP[key]] = true
     end
 end
 
 function FrameOnKeyUp(event, key)
+    print(string.format("key up (%s)", key))
     if RV32_KEYMAP[key] ~= nil then
         RiscVCore.pressed_keys[RV32_KEYMAP[key]] = false
     end
