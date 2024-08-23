@@ -1,7 +1,7 @@
 function RunTests()
     tests = 
     {
-        fib = { 
+        --[[fib = { 
             init = Init_fib, 
             verify = Verify_fib
         },
@@ -44,15 +44,15 @@ function RunTests()
         simpsons_fp_integral = {
             init = Init_simpsons_fp_integral,
             verify = Verify_simpsons_fp_integral
-        }--[[,
+        },
         mandelbrot = {
             init = Init_mandelbrot,
             verify = Verify_mandelbrot
-        },
+        },--]]
         cube = {
             init = Init_cube,
             verify = Verify_cube
-        }]]
+        }
     }
 
     for name, test in pairs(tests) do

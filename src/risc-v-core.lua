@@ -283,6 +283,8 @@ function RiscVCore:InitCPU(init_handler)
     self.memory.mem = {}
     self.instr_cache = {}
 
+    self.pressed_keys = {}
+
     self.entrypoint = 0
 
     init_handler(self)

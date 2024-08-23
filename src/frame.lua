@@ -1,5 +1,20 @@
 local vga_to_rgb = {}
 
+RV32_KEYMAP = {
+    W = 0,
+    A = 1,
+    S = 2,
+    D = 3,
+    R = 4,
+    F = 5,
+    LCTRL = 0x1000,
+    LSHIFT = 0x1001,
+    SPACE = 0x1002,
+    LALT = 0x1003,
+    ENTER = 0x1004,
+    ESCAPE = 0x1005
+}
+
 for i = 0, 255 do
     local r, g, b
 
@@ -61,6 +76,23 @@ for i = 1, 4 do
     PartFrame:Hide()
     table.insert(FrameBufferTestFrameParted, PartFrame)
 end
+
+function FrameOnKeyDown(event, key)
+    if RV32_KEYMAP[key] ~= nil then
+        RiscVCore.pressed_keys[RV32_KEYMAP[key]] = true
+    end
+end
+
+function FrameOnKeyUp(event, key)
+    if RV32_KEYMAP[key] ~= nil then
+        RiscVCore.pressed_keys[RV32_KEYMAP[key]] = false
+    end
+end
+
+FrameBufferTestFrameParted[1]:EnableKeyboard(true)
+FrameBufferTestFrameParted[1]:SetScript("OnKeyDown", FrameOnKeyDown)
+FrameBufferTestFrameParted[1]:SetScript("OnKeyUp", FrameOnKeyUp)
+
 
 function GetPixel(x, y)
     local PartHeight = 50

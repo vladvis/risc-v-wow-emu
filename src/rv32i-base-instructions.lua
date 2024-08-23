@@ -274,6 +274,14 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                 RenderFrame(CPU, framebuffer_addr)
                 CPU.is_running = 0
                 C_Timer.After(0.01, Resume)
+            elseif syscall_num == 103 then -- get_key_state
+                print("get_key_state was called")
+                local key = CPU:LoadRegister(10)
+                if CPU.pressed_keys[key] then
+                    CPU:StoreRegister(10, 1)
+                else
+                    CPU:StoreRegister(10, 0)
+                end
             else
                 --assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end
