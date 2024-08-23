@@ -1,8 +1,5 @@
-function Init_rv32i_immediate_arithmetics(CPU)
-    CPU.entrypoint = 0x80000000
-    CPU.stack_pointer = 0x7ff00000
-    CPU.heap_start = 0x80001000
 
+function Load_Chunkrv32i_immediate_arithmetics0(CPU)
     local mem_sections = {
     
         [0x80000000] = 0x513,
@@ -189,6 +186,17 @@ function Init_rv32i_immediate_arithmetics(CPU)
         [0x80001000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
+end
+
+
+function Init_rv32i_immediate_arithmetics(CPU)
+    CPU.entrypoint = 0x80000000
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x80001000
+
+    
+    Load_Chunkrv32i_immediate_arithmetics0(CPU)
+    
     CPU:StoreRegister(2, 0x7ff00000)
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end

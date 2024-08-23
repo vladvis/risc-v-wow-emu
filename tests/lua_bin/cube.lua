@@ -1,8 +1,5 @@
-function Init_cube(CPU)
-    CPU.entrypoint = 0x100d8
-    CPU.stack_pointer = 0x7ff00000
-    CPU.heap_start = 0x24000
 
+function Load_Chunkcube0(CPU)
     local mem_sections = {
     
         [0x10094] = 0xff010113,
@@ -20005,6 +20002,13 @@ function Init_cube(CPU)
         [0x698] = 0x0,
         [0x69c] = 0x0,
         [0x6a0] = 0x0,
+    }
+    CPU:SetMemory(CPU, mem_sections)
+end
+
+function Load_Chunkcube1(CPU)
+    local mem_sections = {
+    
         [0x6a4] = 0x0,
         [0x6a8] = 0x0,
         [0x6ac] = 0x0,
@@ -20531,6 +20535,19 @@ function Init_cube(CPU)
         [0x24000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
+end
+
+
+function Init_cube(CPU)
+    CPU.entrypoint = 0x100d8
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x24000
+
+    
+    Load_Chunkcube0(CPU)
+    
+    Load_Chunkcube1(CPU)
+    
     CPU:StoreRegister(2, 0x7ff00000)
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end

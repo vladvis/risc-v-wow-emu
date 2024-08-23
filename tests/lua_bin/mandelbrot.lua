@@ -1,8 +1,5 @@
-function Init_mandelbrot(CPU)
-    CPU.entrypoint = 0x100d8
-    CPU.stack_pointer = 0x7ff00000
-    CPU.heap_start = 0x14000
 
+function Load_Chunkmandelbrot0(CPU)
     local mem_sections = {
     
         [0x10094] = 0xff010113,
@@ -4202,6 +4199,17 @@ function Init_mandelbrot(CPU)
         [0x14000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
+end
+
+
+function Init_mandelbrot(CPU)
+    CPU.entrypoint = 0x100d8
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x14000
+
+    
+    Load_Chunkmandelbrot0(CPU)
+    
     CPU:StoreRegister(2, 0x7ff00000)
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end

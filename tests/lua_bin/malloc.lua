@@ -1,8 +1,5 @@
-function Init_malloc(CPU)
-    CPU.entrypoint = 0x100d8
-    CPU.stack_pointer = 0x7ff00000
-    CPU.heap_start = 0x21000
 
+function Load_Chunkmalloc0(CPU)
     local mem_sections = {
     
         [0x10094] = 0xff010113,
@@ -20005,6 +20002,13 @@ function Init_malloc(CPU)
         [0x37a4] = 0x0,
         [0x37a8] = 0x0,
         [0x37ac] = 0x0,
+    }
+    CPU:SetMemory(CPU, mem_sections)
+end
+
+function Load_Chunkmalloc1(CPU)
+    local mem_sections = {
+    
         [0x37b0] = 0x0,
         [0x37b4] = 0x0,
         [0x37b8] = 0x0,
@@ -24006,6 +24010,19 @@ function Init_malloc(CPU)
         [0x21000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
+end
+
+
+function Init_malloc(CPU)
+    CPU.entrypoint = 0x100d8
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x21000
+
+    
+    Load_Chunkmalloc0(CPU)
+    
+    Load_Chunkmalloc1(CPU)
+    
     CPU:StoreRegister(2, 0x7ff00000)
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end

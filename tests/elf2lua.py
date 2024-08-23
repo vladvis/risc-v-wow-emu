@@ -65,7 +65,7 @@ def generate_lua_script(name, entrypoint, stack_pointer, heap_start, gp_pointer,
 
     chunks = []
     keys_count = len(memory_map)
-    chunk_len = 50000
+    chunk_len = 20000
 
     keys = list(memory_map.keys())
     for i in range(0, keys_count, chunk_len):
@@ -78,7 +78,8 @@ def generate_lua_script(name, entrypoint, stack_pointer, heap_start, gp_pointer,
         stack_pointer=stack_pointer,
         heap_start=heap_start,
         gp_pointer=gp_pointer,
-        chunks=chunks
+        chunks=chunks,
+        chunks_len=len(chunks)
     )
 
     return lua_script

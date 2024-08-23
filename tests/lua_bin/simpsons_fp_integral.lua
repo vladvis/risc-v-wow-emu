@@ -1,8 +1,5 @@
-function Init_simpsons_fp_integral(CPU)
-    CPU.entrypoint = 0x100d8
-    CPU.stack_pointer = 0x7ff00000
-    CPU.heap_start = 0x15000
 
+function Load_Chunksimpsons_fp_integral0(CPU)
     local mem_sections = {
     
         [0x10094] = 0xff010113,
@@ -4835,6 +4832,17 @@ function Init_simpsons_fp_integral(CPU)
         [0x15000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
+end
+
+
+function Init_simpsons_fp_integral(CPU)
+    CPU.entrypoint = 0x100d8
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x15000
+
+    
+    Load_Chunksimpsons_fp_integral0(CPU)
+    
     CPU:StoreRegister(2, 0x7ff00000)
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end

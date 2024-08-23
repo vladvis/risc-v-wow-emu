@@ -1,8 +1,5 @@
-function Init_fib(CPU)
-    CPU.entrypoint = 0x10170
-    CPU.stack_pointer = 0x7ff00000
-    CPU.heap_start = 0x12000
 
+function Load_Chunkfib0(CPU)
     local mem_sections = {
     
         [0x10094] = 0xfe010113,
@@ -152,6 +149,17 @@ function Init_fib(CPU)
         [0x12000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
+end
+
+
+function Init_fib(CPU)
+    CPU.entrypoint = 0x10170
+    CPU.stack_pointer = 0x7ff00000
+    CPU.heap_start = 0x12000
+
+    
+    Load_Chunkfib0(CPU)
+    
     CPU:StoreRegister(2, 0x7ff00000)
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end
