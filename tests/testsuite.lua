@@ -52,10 +52,14 @@ function RunTests()
         cube = {
             init = Init_cube,
             verify = Verify_cube
-        }, --]]
+        }, 
         malloc = {
             init = Init_malloc,
             verify = Verify_malloc
+        }--]]
+        doom = {
+            init = Init_doom,
+            verify = Verify_doom
         }
     }
 
