@@ -273,7 +273,7 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                 local framebuffer_addr = CPU:LoadRegister(10)
                 RenderFrame(CPU, framebuffer_addr)
                 CPU.is_running = 0
-                C_Timer.After(0.1, Resume)
+                C_Timer.After(0.01, Resume)
             else
                 --assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
             end
