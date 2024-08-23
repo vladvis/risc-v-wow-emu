@@ -287,7 +287,7 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                 -- local stat_addr = CPU:LoadRegister(10)
                 -- CPU.memory:Write(stat_addr + 32, 512, 4) -- stat.st_blksize = 512
             elseif syscall_num == 57 then -- fclose
-                
+                -- 
             elseif syscall_num == 214 then -- brk
                 local addr = CPU:LoadRegister(10)
                 if addr == 0 then
