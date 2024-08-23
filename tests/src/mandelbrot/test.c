@@ -102,7 +102,7 @@ int main() {
         }
     }
 
-    // wow_toggle_window();
+    wow_toggle_window();
 
     return 0;
 }

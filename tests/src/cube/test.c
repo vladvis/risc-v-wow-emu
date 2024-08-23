@@ -7,6 +7,20 @@
 
 #define SYS_WOW_toggle_window 101
 #define SYS_WOW_send_framebuffer 102
+#define SYS_WOW_check_key_pressed 103
+
+#define RV32_KEY_W       0
+#define RV32_KEY_A       1
+#define RV32_KEY_S       2
+#define RV32_KEY_D       3
+#define RV32_KEY_R       4
+#define RV32_KEY_F       5
+#define RV32_KEY_LCTRL   0x1000
+#define RV32_KEY_LSHIFT  0x1001
+#define RV32_KEY_SPACE   0x1002
+#define RV32_KEY_LALT    0x1003
+#define RV32_KEY_ENTER   0x1004
+#define RV32_KEY_ESCAPE  0x1005
 
 #define WIDTH 320
 #define HEIGHT 200
@@ -73,14 +87,32 @@ void volatile wow_toggle_window() {
 void output_framebuffer(unsigned char *framebuffer) {
 #ifdef ENABLE_WOW_API
 
-        asm volatile (
+    asm volatile (
         "li a7, %0\n"
         "mv a0, %1\n"
         "ecall\n"
         : 
-        : "i" (102), "r" (framebuffer)
+        : "i" (SYS_WOW_send_framebuffer), "r" (framebuffer)
         : "a0", "a7"
     );
+#endif
+}
+
+int check_key_pressed(int key) {
+#ifdef ENABLE_WOW_API
+    int result;
+    asm volatile (
+        "mv a0, %1\n"  
+        "li a7, %2\n"  
+        "ecall\n"      
+        "mv %0, a0\n"  
+        : "=r" (result)  
+        : "r" (key), "i" (SYS_WOW_check_key_pressed)  
+        : "a0", "a7"  
+    );
+    return result;  
+#else
+    return false;
 #endif
 }
 
@@ -182,7 +214,7 @@ void fill_face(unsigned char *framebuffer, Point2D p0, Point2D p1, Point2D p2, P
 }
 
 
-void render_cube(float angle) {
+void render_cube(float angle_x, float angle_y, float angle_z) {
     memset(framebuffer, 0, SCREEN_SIZE);  
 
     Point2D transformed_vertices[8];
@@ -190,9 +222,9 @@ void render_cube(float angle) {
         Point3D vertex = vertices[i];
 
         
-        rotate_x(&vertex, angle);
-        rotate_y(&vertex, angle);
-        rotate_z(&vertex, angle);
+        rotate_x(&vertex, angle_x);
+        rotate_y(&vertex, angle_y);
+        rotate_z(&vertex, angle_z);
 
         
         transformed_vertices[i] = project(vertex.x, vertex.y, vertex.z);
@@ -222,13 +254,28 @@ void render_cube(float angle) {
     output_framebuffer(framebuffer);
 }
 
-int main() {
-    float angle = 0;
-    wow_toggle_window();
-    while (angle < 2 * M_PI) {  
-        render_cube(angle);
-        angle += 0.05f;
-    }
+float get_keypress_delta(int key_dec, int key_inc, float delta) {
+    if (check_key_pressed(key_dec))
+        return -delta;
+    if (check_key_pressed(key_inc))
+        return delta;
+    return 0;
+}
 
+
+int main() {
+    float angle_x = 0;
+    float angle_y = 0;
+    float angle_z = 0;
+
+    wow_toggle_window();
+    while (1) {  
+        angle_x = angle_x + get_keypress_delta(RV32_KEY_A, RV32_KEY_D, 0.05f);
+        angle_y = angle_y + get_keypress_delta(RV32_KEY_W, RV32_KEY_S, 0.05f);
+        angle_z = angle_z + get_keypress_delta(RV32_KEY_R, RV32_KEY_F, 0.05f);
+        
+        render_cube(angle_x, angle_y, angle_z);
+    }
+    wow_toggle_window();
     return 0;
 }
