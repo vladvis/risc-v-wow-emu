@@ -3,11 +3,13 @@ function Init_{{ name }}(CPU)
     CPU.stack_pointer = {{ stack_pointer | hex }}
     CPU.heap_start = {{ heap_start | hex }}
 
+    {% for chunk in chunks %}
     local mem_sections = {
-    {% for address, value in memory_map.items() %}
+    {% for address, value in chunk.items() %}
         [{{ address | hex }}] = {{ value | hex }},{% endfor %}
     }
     CPU:SetMemory(CPU, mem_sections)
+    {% endfor %}
     CPU:StoreRegister(2, {{ stack_pointer | hex }})
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end

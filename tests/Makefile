@@ -14,7 +14,7 @@ all: $(BIN_DIR) $(OUT_FILES)
 
 # Rule to run make in each subdirectory, pipe the binary to the python script, and save the output
 $(BIN_DIR)/%: $(TESTS_DIR)/%
-	$(MAKE) -C $< 
+#	$(MAKE) -C $< 
 	dir_name=$(shell basename $<); \
 	cat $</out | python3 $(SCRIPT) $$dir_name > $@.lua
 	cp $</verify.lua $@_verify.lua

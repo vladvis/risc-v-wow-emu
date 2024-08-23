@@ -63,6 +63,14 @@ def generate_lua_script(name, entrypoint, stack_pointer, heap_start, gp_pointer,
     env.filters['hex'] = hex
     template = env.get_template('init.lua.j2')
 
+    chunks = []
+    keys_count = len(memory_map)
+    chunk_len = 50000
+
+    keys = list(memory_map.keys())
+    for i in range(0, keys_count, chunk_len):
+         chunks.append({ key: memory_map[key] for key in keys[i:i+chunk_len] })
+
     # Render the template with the provided data
     lua_script = template.render(
         name=name,
@@ -70,7 +78,7 @@ def generate_lua_script(name, entrypoint, stack_pointer, heap_start, gp_pointer,
         stack_pointer=stack_pointer,
         heap_start=heap_start,
         gp_pointer=gp_pointer,
-        memory_map=memory_map
+        chunks=chunks
     )
 
     return lua_script

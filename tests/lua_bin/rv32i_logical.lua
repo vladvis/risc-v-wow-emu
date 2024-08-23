@@ -3,6 +3,7 @@ function Init_rv32i_logical(CPU)
     CPU.stack_pointer = 0x7ff00000
     CPU.heap_start = 0x80001000
 
+    
     local mem_sections = {
     
         [0x80000000] = 0x513,
@@ -153,6 +154,7 @@ function Init_rv32i_logical(CPU)
         [0x80001000] = 0x0,
     }
     CPU:SetMemory(CPU, mem_sections)
+    
     CPU:StoreRegister(2, 0x7ff00000)
     CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
 end
