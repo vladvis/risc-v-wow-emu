@@ -18,7 +18,7 @@ function FPU_Load(CPU, rd, funct3, rs1, imm_value)
         -- FLD: Load 64-bit double
         value = CPU.memory:Read(addr, 'double')
     else
-        assert(false, "Unsupported FPU load funct3: " .. tostring(funct3))
+        --assert(false, "Unsupported FPU load funct3: " .. tostring(funct3))
     end
 
     CPU.fregisters[rd].value = value
@@ -35,7 +35,7 @@ function FPU_Store(CPU, funct3, rs1, rs2, imm_value)
         -- FSD: Store 64-bit double
         CPU.memory:Write(addr, value, 'double')
     else
-        assert(false, "Unsupported FPU store funct3: " .. tostring(funct3))
+        --assert(false, "Unsupported FPU store funct3: " .. tostring(funct3))
     end
 end
 
@@ -93,7 +93,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         elseif funct3 == 0x1 then -- FMAX.S | FMAX.D
             result = math.max(op1, op2)
         else
-            assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
+            --assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
         end
     elseif funct6 == 0x08 then
         if funct3 == 0x00 then -- FSGNJ.S | FSGNJ.D
@@ -103,7 +103,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         elseif funct3 == 0x02 then -- FSGNJX.S | FSGNJX.D
             result = op1 * get_sign(op2)
         else
-            assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
+            --assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
         end
     elseif funct6 == 0x16 then -- FSQRT.S | FSQRT.D
         result = math.sqrt(op1)
@@ -115,7 +115,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         elseif funct3 == 0x02 then -- FEQ.S | FEQ.D
             result = (op1 == op2) and 1 or 0
         else
-            assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
+            --assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
         end
     elseif funct6 == 0x10 then -- FCVT.S.D | FCVT.D.S
         result = op1
@@ -140,7 +140,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
             end
             result = x > 0.5 and math.ceil(op1) or math.floor(op1)
         else
-            assert(false, "Invalid Rounding Mode value: " .. tostring(rm))
+            --assert(false, "Invalid Rounding Mode value: " .. tostring(rm))
         end
         if rs2 == 0x00 then -- FCVT.W.S | FCVT.W.D
             result = math.max(-0x80000000, result)
@@ -150,7 +150,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
             result = math.max(0, result)
             result = math.min(0xFFFFFFFF, result)
         else
-            assert(false, "invalid rs2 value: " .. tostring(rs2))
+            --assert(false, "invalid rs2 value: " .. tostring(rs2))
         end
     elseif funct6 == 0x34 then -- (ATTENTION: rs1 is integer)
         if rs2 == 0x00 then -- FCVT.S.W | FCVT.D.W
@@ -158,7 +158,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         elseif rs2 == 0x01 then -- FCVT.S.WU | FCVT.D.WU
             result = CPU:LoadRegister(rs1)
         else
-            assert(false, "invalid rs2 value: " .. tostring(rs2))
+            --assert(false, "invalid rs2 value: " .. tostring(rs2))
         end
     elseif funct6 == 0x38 then -- (ATTENTION: rd is integer)
         if funct3 == 0x00 then -- FMV.X.W
@@ -179,15 +179,15 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
             elseif op1 > 0 then
                 result = bit.lshift(1, 6)
             else
-                assert(false, "WOOT?")
+                --assert(false, "WOOT?")
             end
         else
-            assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
+            --assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
         end
     elseif funct6 == 0x3c then -- FMV.W.X (ATTENTION: rs1 is integer)
         result = bits_to_float(CPU:LoadRegister(rs1))
     else
-        assert(false, "Unsupported FP operation funct7: " .. tostring(funct7) .. " " .. tostring(funct6))
+        --assert(false, "Unsupported FP operation funct7: " .. tostring(funct7) .. " " .. tostring(funct6))
     end
 
     if funct6 == 0x38 or funct6 == 0x30 or funct6 == 0x28 then

@@ -1,6 +1,6 @@
 # Define the cross-compiler and flags
 CC = /opt/toolchains/riscv32/bin/riscv32-unknown-elf-gcc
-CFLAGS = -Wall -O2 -no-pie 
+CFLAGS = -Wall -O1 -no-pie
 LDFLAGS = -lm -static
 
 # Define the source and output files
@@ -23,4 +23,4 @@ test: $(OUTPUT)
 
 # Rule to clean the build directory
 clean:
-	rm -f $(OUTPUT) spike_output.log
+	rm -f $(OUTPUT) 

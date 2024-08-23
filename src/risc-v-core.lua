@@ -52,19 +52,19 @@ function set_unsign(value, bits)
 end
 
 function RiscVCore:LoadRegister(source)
-    assert((source >= 0) and (source <= 31), "register x".. tostring(source) .." isn't existed (load)")
+    --assert((source >= 0) and (source <= 31), "register x".. tostring(source) .." isn't existed (load)")
     return self.registers[source]
 end
 
 function RiscVCore:StoreRegister(dest, value)
     if dest ~= 0 then
-        assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
+        --assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
         self.registers[dest] = bit.band(value, 0xffffffff)
     end
 end
 
 function RiscVCore:StorePC(value)
-    assert(value % 4 == 0, "pc must be aligned")
+    --assert(value % 4 == 0, "pc must be aligned")
     self.jumped = true
     self.registers.pc = bit.band(value, 0xffffffff)
 end
@@ -133,7 +133,7 @@ function RiscVCore:ReadCSR(csr_address)
     elseif csr_address == 0x003 then
         return self:EncodeFCSR()
     else
-        assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+        --assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
         return self.csr[csr_address]
     end
 end
@@ -146,7 +146,7 @@ function RiscVCore:WriteCSR(csr_address, value)
     elseif csr_address == 0x003 then
         self:DecodeFCSR(value)
     else
-        assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+        --assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
         self.csr[csr_address] = bit.band(value, 0xffffffff)
     end
 end
@@ -294,16 +294,17 @@ function RiscVCore:InitCPU(init_handler)
 end
 
 function Resume()
+    print("resume", RiscVCore.counter)
     RiscVCore.is_running = 1
     RiscVCore:Run()
 end
 
 function RiscVCore:Step()
     local instruction = self.memory:Get(self.registers.pc)
-    assert(instruction ~= nil, "out of bound execution")
+    --assert(instruction ~= nil, "out of bound execution")
 
     opcode = bit.band(instruction, 0x7f)
-    assert(self.opcodes[opcode], "opcode ".. tostring(opcode) .." is not implemented")
+    --assert(self.opcodes[opcode], "opcode ".. tostring(opcode) .." is not implemented")
 
     if self.opcodes[opcode].type == "U" then
         
@@ -378,7 +379,7 @@ function RiscVCore:Step()
         self.opcodes[opcode].handler(self, rd, funct3, rs1, rs2, funct2, rs3)
 
     else
-        assert(false, "opcode encoding " .. tostring(self.opcodes[opcode].type) .. " is not implemented")
+        --assert(false, "opcode encoding " .. tostring(self.opcodes[opcode].type) .. " is not implemented")
     end
 
     if self.jumped then
@@ -387,11 +388,12 @@ function RiscVCore:Step()
         self.registers.pc = self.registers.pc + 4
     end
 
-    --[[self.counter = self.counter + 1
-    if self.counter % 1000 == 0 then
+    self.counter = self.counter + 1
+    if self.counter % 1000000 == 0 then
+        print("pause", self.counter, self.counter % 10000, self.counter % 10000 == 0)
         self.is_running = 0
         C_Timer.After(0.1, Resume)
-    end--]]
+    end
 end
 
 function RiscVCore:PrintRegs()

@@ -72,16 +72,13 @@ end
 function RenderFrame(CPU, framebuffer_addr)
     local PartHeight = 50
 
-    for i = 0, 320-1 do
-        for j = 0, 200-1 do
-            local offset = j + i*200
+    for x = 0, 320-1 do
+        for y = 0, 200-1 do
+            local offset = y * 320 + x
             local data = CPU.memory:Read(framebuffer_addr + offset, 1)
-            if data ~= 0 then
-                print(i)
-                print(j)
-            end
+            
             local color = vga_to_rgb[data]
-            local pixel = GetPixel(i, j)
+            local pixel = GetPixel(x, y)
             pixel:SetColorTexture(unpack(color))
         end
     end
