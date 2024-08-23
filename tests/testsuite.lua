@@ -48,10 +48,14 @@ function RunTests()
         mandelbrot = {
             init = Init_mandelbrot,
             verify = Verify_mandelbrot
-        },--]]
+        },
         cube = {
             init = Init_cube,
             verify = Verify_cube
+        }, --]]
+        malloc = {
+            init = Init_malloc,
+            verify = Verify_malloc
         }
     }
 
