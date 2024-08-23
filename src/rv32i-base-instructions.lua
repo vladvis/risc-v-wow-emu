@@ -295,6 +295,7 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
                         CPU.memory:Set(x, 0)
                     end
                     CPU:StoreRegister(10, addr)
+                    CPU.heap_start = addr
                 end
             else
                 assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
