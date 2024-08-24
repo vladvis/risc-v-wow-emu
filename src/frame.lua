@@ -7,16 +7,16 @@ RV32_KEYMAP = {
     D = 3,
     R = 4,
     F = 5,
-    LCTRL = 0x1000,
-    LSHIFT = 0x1001,
-    SPACE = 0x1002,
-    LALT = 0x1003,
-    ENTER = 0x1004,
-    ESCAPE = 0x1005,
-    LEFT = 0x2000,
-    RIGHT = 0x2001,
-    UP = 0x2002,
-    DOWN = 0x2003
+    LCTRL = 6,
+    LSHIFT = 7,
+    SPACE = 8,
+    LALT = 9,
+    ENTER = 10,
+    ESCAPE = 11,
+    UP = 12,
+    LEFT = 13,
+    DOWN = 14,
+    RIGHT = 15
 }
 --[[
 for i = 0, 255 do

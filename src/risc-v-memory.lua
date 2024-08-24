@@ -3,11 +3,24 @@ RiscVMemory = {
 
 function RiscVMemory:Get(addr)
     --assert(self.mem[addr] ~= nil, string.format("addr 0x%x is not allocated", addr))
+    --[[
+    local hi = bit.rshift(addr, 12)
+    local lo = bit.band(addr, 0xfff)
+    return self.mem[hi][lo]
+    ]]
     return self.mem[addr]
 end
 
 function RiscVMemory:Set(addr, value)
     --assert(addr % 4 == 0, "addr must be aligned (set)")
+    --[[
+    local hi = bit.rshift(addr, 12)
+    local lo = bit.band(addr, 0xfff)
+    if self.mem[hi] == nil then
+        self.mem[hi] = {}
+    end
+    self.mem[hi][lo] = value
+    ]]
     self.mem[addr] = value
 end
 

@@ -23,10 +23,13 @@ function handle_syscall(CPU, syscall_num)
         print("togglewindow was called")
         ToggleWindow()
     elseif syscall_num == 102 then -- render_framebuffer
-        print("render_framebuffer was called")
+        local t = GetTime()
+        local delta = t - CPU.last_frame
+        print(string.format("render_framebuffer was called (%f)", delta))
         local framebuffer_addr = CPU:LoadRegister(10)
         RenderFrame(CPU, framebuffer_addr)
         CPU.is_running = 0
+        CPU.last_frame = t
         C_Timer.After(0.01, Resume)
     elseif syscall_num == 103 then -- get_key_state
         print("get_key_state was called")
