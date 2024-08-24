@@ -15,6 +15,7 @@ echo "Addon path: %ADDON_PATH%"
 
 @MD "%ADDON_PATH%"
 
+@COPY "src\risc-v-syscall.lua" "%ADDON_PATH%"
 @COPY "src\risc-v-core.lua" "%ADDON_PATH%"
 @COPY "src\risc-v-memory.lua" "%ADDON_PATH%"
 @COPY "src\rv32i-base-instructions.lua" "%ADDON_PATH%"

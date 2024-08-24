@@ -412,7 +412,7 @@ function RiscVCore:Step()
     if self.counter % 1000000 == 0 then
         print("pause", self.counter, self.counter % 10000, self.counter % 10000 == 0)
         self.is_running = 0
-        C_Timer.After(0.01, Resume)
+        C_Timer.After(0.1, Resume)
     end
 end
 
