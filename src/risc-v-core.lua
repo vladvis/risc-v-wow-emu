@@ -301,12 +301,6 @@ function RiscVCore:InitCPU(init_handler)
     self.counter = 0
 end
 
-function Resume()
-    print("resume", RiscVCore.counter)
-    RiscVCore.is_running = 1
-    RiscVCore:Run()
-end
-
 function RiscVCore:Step()
     local instruction = self.memory:Get(self.registers.pc)
     --assert(instruction ~= nil, "out of bound execution")
@@ -409,10 +403,24 @@ function RiscVCore:Step()
     end
 
     self.counter = self.counter + 1
-    if self.counter % 1000000 == 0 then
-        print("pause", self.counter, self.counter % 10000, self.counter % 10000 == 0)
+    if self.counter % 100000 == 0 then
+        --print("pause", self.counter, self.counter % 10000, self.counter % 10000 == 0)
+        self:MaybeYieldCPU()
+    end
+end
+
+function Resume()
+    RiscVCore.last_sleep = time()
+    --print("resume", RiscVCore.counter)
+    RiscVCore.is_running = 1
+    RiscVCore:Run()
+end
+
+function RiscVCore:MaybeYieldCPU()
+    local now = time()
+    if now - self.last_sleep > 2 then
         self.is_running = 0
-        C_Timer.After(0.1, Resume)
+        C_Timer.After(0.01, Resume)
     end
 end
 
@@ -424,6 +432,7 @@ function RiscVCore:PrintRegs()
 end
 
 function RiscVCore:Run()
+    self.last_sleep = time()
     while RiscVCore.is_running == 1 do
         RiscVCore:Step()
     end
