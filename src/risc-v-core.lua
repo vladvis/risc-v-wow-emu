@@ -43,7 +43,12 @@ function set_sign(value, bits)
 end
 
 function set_unsign(value, bits)
-    local max_uint = bit.lshift(1, bits)
+    local max_uint = nil
+    if bits == 32 then
+        max_uint = 0x100000000
+    else
+        max_uint = bit.lshift(1, bits)
+    end
     if value < 0 then
         return value + max_uint
     else
