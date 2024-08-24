@@ -1,6 +1,6 @@
 # Define the cross-compiler and flags
 CC = /opt/toolchains/riscv32/bin/riscv32-unknown-elf-gcc
-CFLAGS = -Wall -O1 -no-pie
+CFLAGS = -Wall -O2 -no-pie
 LDFLAGS = -lm -static
 
 # Define the source and output files
