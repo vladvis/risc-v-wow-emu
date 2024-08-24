@@ -12,7 +12,7 @@ int main() {
     // 1. Simple Allocation and Deallocation
     printf("Test 1: Simple Allocation and Deallocation\n");
     char *ptr1 = malloc(10 * sizeof(char));
-    --assert(ptr1 != NULL);
+    assert(ptr1 != NULL);
     strncpy(ptr1, "Hello", 9);
     ptr1[9] = '\0';  // Ensure null termination
     printf("ptr1 contains: %s\n", ptr1);
@@ -25,7 +25,7 @@ int main() {
     double *ptr3 = malloc(5 * sizeof(double));
     char *ptr4 = malloc(SAFE_STR_LEN * sizeof(char));
 
-    --assert(ptr2 != NULL && ptr3 != NULL && ptr4 != NULL);
+    assert(ptr2 != NULL && ptr3 != NULL && ptr4 != NULL);
 
     for (int i = 0; i < 5; i++) {
         ptr2[i] = i * 10;
@@ -36,10 +36,10 @@ int main() {
 
     // Verify contents
     for (int i = 0; i < 5; i++) {
-        --assert(ptr2[i] == i * 10);
-        --assert(ptr3[i] == i * 0.1);
+        assert(ptr2[i] == i * 10);
+        assert(ptr3[i] == i * 0.1);
     }
-    --assert(strncmp(ptr4, "Multiple allocations test", SAFE_STR_LEN) == 0);
+    assert(strncmp(ptr4, "Multiple allocations test", SAFE_STR_LEN) == 0);
 
     // Free allocated memory
     free(ptr2);
@@ -67,9 +67,9 @@ int main() {
     if (ptr6 != NULL) {
         memset(ptr6, 'A', large_size);
         // Verify a few bytes
-        --assert(ptr6[0] == 'A');
-        --assert(ptr6[large_size / 2] == 'A');
-        --assert(ptr6[large_size - 1] == 'A');
+        assert(ptr6[0] == 'A');
+        assert(ptr6[large_size / 2] == 'A');
+        assert(ptr6[large_size - 1] == 'A');
         free(ptr6);
         printf("  Subtest b passed.\n");
     } else {
@@ -84,7 +84,7 @@ int main() {
     // d. Double Free
     printf("  Subtest d: Double Free\n");
     char *ptr7 = malloc(10);
-    --assert(ptr7 != NULL);
+    assert(ptr7 != NULL);
     free(ptr7);
 
     printf("  Subtest d skipped (double free can cause undefined behavior).\n");
@@ -99,7 +99,7 @@ int main() {
     // Allocate
     for (int i = 0; i < NUM_PTRS; i++) {
         ptrs[i] = malloc(64); // Allocate 64 bytes
-        --assert(ptrs[i] != NULL);
+        assert(ptrs[i] != NULL);
         memset(ptrs[i], i % 256, 64); // Fill with a pattern
         // printf("%d %d\n", i, ptrs[i][15]);
     }
@@ -108,7 +108,7 @@ int main() {
     for (int i = 0; i < NUM_PTRS; i++) {
         for (int j = 0; j < 64; j++) {
             //printf("%d %d\n", i, ptrs[i][15]);
-            --assert(ptrs[i][j] == (char)(i % 256));
+            assert(ptrs[i][j] == (char)(i % 256));
         }
         free(ptrs[i]);
     }
