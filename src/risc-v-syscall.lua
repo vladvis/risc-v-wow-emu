@@ -36,6 +36,10 @@ function handle_syscall(CPU, syscall_num)
         else
             CPU:StoreRegister(10, 0)
         end
+    elseif syscall_num == 104 then -- sleep
+        local msec = CPU:LoadRegister(10)
+        CPU.is_running = 0
+        C_Timer.After(msec / 1000, Resume)
     elseif syscall_num == 80 then -- newfstat
         -- local stat_addr = CPU:LoadRegister(10)
         -- CPU.memory:Write(stat_addr + 32, 512, 4) -- stat.st_blksize = 512
@@ -53,8 +57,9 @@ function handle_syscall(CPU, syscall_num)
             CPU.heap_start = addr
         end
     elseif syscall_num == 403 then -- clock_gettime
-        print(CPU:LoadRegister(10))
-        assert(false, "hui")
+        local clock_id = CPU:LoadRegister(10)
+        local struct_addr = CPU:LoadRegister(11)
+        CPU.memory:Write(struct_addr, time(), 4)
     else
         assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
     end
