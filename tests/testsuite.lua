@@ -56,11 +56,15 @@ function RunTests()
         malloc = {
             init = Init_malloc,
             verify = Verify_malloc
-        }--]]
-        doom = {
+        }]]
+        memset_short = {
+            init = Init_memset_short,
+            verify = Verify_memset_short
+        }
+        --[[doom = {
             init = Init_doom,
             verify = Verify_doom
-        }
+        }--]]
     }
 
     for name, test in pairs(tests) do

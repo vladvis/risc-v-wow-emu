@@ -17,5 +17,5 @@ function Init_{{ name }}(CPU)
     Load_Chunk{{name}}{{i}}(CPU)
     {% endfor %}
     CPU:StoreRegister(2, {{ stack_pointer | hex }})
-    CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
+    CPU.memory:InitMemoryRange(0x7ee00000, 0x7ff00004)
 end

@@ -218,5 +218,5 @@ function Init_rv32i_controlflow(CPU)
     Load_Chunkrv32i_controlflow0(CPU)
     
     CPU:StoreRegister(2, 0x7ff00000)
-    CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
+    CPU.memory:InitMemoryRange(0x7ee00000, 0x7ff00004)
 end

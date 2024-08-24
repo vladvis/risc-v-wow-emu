@@ -24024,5 +24024,5 @@ function Init_malloc(CPU)
     Load_Chunkmalloc1(CPU)
     
     CPU:StoreRegister(2, 0x7ff00000)
-    CPU.memory:InitMemoryRange(0x7fe00000, 0x7ff00004)
+    CPU.memory:InitMemoryRange(0x7ee00000, 0x7ff00004)
 end
