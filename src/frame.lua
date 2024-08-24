@@ -373,15 +373,19 @@ end
 
 function RenderFrame(CPU, framebuffer_addr)
     local PartHeight = 50
-
-    for x = 0, 320-1 do
+    for x = 0, 320-1, 4 do
         for y = 0, 200-1 do
             local offset = y * 320 + x
-            local data = CPU.memory:Read(framebuffer_addr + offset, 1)
+            local data = CPU.memory:Read(framebuffer_addr + offset, 4)
             
-            local color = vga_to_rgb[data]
-            local pixel = GetPixel(x, y)
-            pixel:SetColorTexture(unpack(color))
+            for i=0,3 do
+                local data_loc = bit.band(data, 0xff)
+                local color = vga_to_rgb[data_loc]
+                local pixel = GetPixel(x + i, y)
+                pixel:SetColorTexture(unpack(color))
+                data = bit.rshift(data, 8)
+            end
+
         end
     end
 end
@@ -400,6 +404,7 @@ local function callback()
             local color = vga_to_rgb[test_frame[j*320 + i + 1]]
             local pixel = GetPixel(i, j)
             pixel:SetColorTexture(unpack(color))
+
         end
     end
 
