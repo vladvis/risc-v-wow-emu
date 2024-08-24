@@ -66,6 +66,27 @@ function handle_syscall(CPU, syscall_num)
             frac = frac + frac_step
         end
 
+    elseif syscall_num == 106 then -- draw_span
+        local dest = CPU:LoadRegister(10)
+        local ds_colormap = CPU:LoadRegister(11)
+        local ds_source = CPU:LoadRegister(12)
+        local position = CPU:LoadRegister(13)
+        local step = CPU:LoadRegister(14)
+        local count = CPU:LoadRegister(15)
+
+        for i=count,0,-1 do
+            local ytemp = bit.band(bit.rshift(position, 4), 0x0fc0)
+            local xtemp = bit.rshift(position, 26)
+            local spot = bit.bor(xtemp, ytemp)
+
+            local source_val = CPU.memory:Read(ds_source + spot, 1)
+            local val = CPU.memory:Read(ds_colormap + source_val, 1)
+            CPU.memory:Write(dest, val, 1)
+
+            dest = dest + 1
+            position = position + step
+        end
+
     elseif syscall_num == 80 then -- newfstat
         -- local stat_addr = CPU:LoadRegister(10)
         -- CPU.memory:Write(stat_addr + 32, 512, 4) -- stat.st_blksize = 512
