@@ -363,25 +363,31 @@ FrameBufferTestFrameParted[1]:EnableKeyboard(true)
 FrameBufferTestFrameParted[1]:SetScript("OnKeyDown", FrameOnKeyDown)
 FrameBufferTestFrameParted[1]:SetScript("OnKeyUp", FrameOnKeyUp)
 
+precalc_partn = {}
+precalc_localy = {}
+PartHeight = 50
 
-function GetPixel(x, y)
-    local PartHeight = 50
-    local PartN = 4 - math.floor(y / PartHeight)
-    local localy = y % PartHeight
+function GetPixel(x, y, PartN, localy, offset)
+    --local PartN = 4 - math.floor(y / PartHeight)
+    --local localy = y % PartHeight
     return FrameBufferTestFrameParted[PartN].FrameBuffer[localy * 320 + x + 1]
 end
 
+for i = 0, 200-1 do
+    precalc_partn[i] = 4 - math.floor(i / PartHeight)
+    precalc_localy[i] = i % PartHeight
+end
+
 function RenderFrame(CPU, framebuffer_addr)
-    local PartHeight = 50
     for x = 0, 320-1, 4 do
         for y = 0, 200-1 do
             local offset = y * 320 + x
             local data = CPU.memory:Read(framebuffer_addr + offset, 4)
-            
+
             for i=0,3 do
                 local data_loc = bit.band(data, 0xff)
                 local color = vga_to_rgb[data_loc]
-                local pixel = GetPixel(x + i, y)
+                local pixel = GetPixel(x + i, y, precalc_partn[y], precalc_localy[y], offset)
                 pixel:SetColorTexture(unpack(color))
                 data = bit.rshift(data, 8)
             end
