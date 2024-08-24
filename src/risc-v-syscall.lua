@@ -32,7 +32,7 @@ function handle_syscall(CPU, syscall_num)
         CPU.last_frame = t
         C_Timer.After(0.01, Resume)
     elseif syscall_num == 103 then -- get_key_state
-        print("get_key_state was called")
+        -- print("get_key_state was called")
         local key = CPU:LoadRegister(10)
         if CPU.pressed_keys[key] then
             CPU:StoreRegister(10, 1)
