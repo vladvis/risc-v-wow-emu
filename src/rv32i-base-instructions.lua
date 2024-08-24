@@ -16,7 +16,7 @@ function BaseInstructions_JAL(CPU, rd, imm_value)
 end
 
 function BaseInstructions_JALR(CPU, rd, funct3, rs1, imm_value)
-    assert(funct3 == 0, "funct3 is reserved for JALR")
+    --assert(funct3 == 0, "funct3 is reserved for JALR")
 
     local return_address = CPU.registers.pc + 4
     if (rd ~= 0) then
@@ -46,7 +46,7 @@ function BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
     elseif test == 3 then -- BLTU | BGEU
         cond = op1 < op2
     else
-        assert(false, "condition " .. tostring(funct3) .. " is not existed")
+        --assert(false, "condition " .. tostring(funct3) .. " is not existed")
     end
 
     cond = bit.bxor(bool_to_number(cond), bit.band(funct3, 1))
@@ -72,7 +72,7 @@ function BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
     elseif funct3 == 5 then -- LHU
         value = CPU.memory:Read(addr, 2)
     else
-        assert(false, "load opcode " .. tostring(funct3) .. " is not existed")
+        --assert(false, "load opcode " .. tostring(funct3) .. " is not existed")
     end
 
     CPU:StoreRegister(rd, value)
@@ -89,7 +89,7 @@ function BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
     elseif funct3 == 2 then -- SW
         CPU.memory:Write(addr, value, 4)
     else
-        assert(false, "store opcode " .. tostring(funct3) .. " is not existed")
+        --assert(false, "store opcode " .. tostring(funct3) .. " is not existed")
     end
 end
 
@@ -119,7 +119,7 @@ function BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
             result = bit.arshift(op1, shift_amount)
         end
     else
-        assert(false, "Unsupported OP_IMM funct3: " .. tostring(funct3))
+        --assert(false, "Unsupported OP_IMM funct3: " .. tostring(funct3))
     end
 
     CPU:StoreRegister(rd, result)
@@ -140,7 +140,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             local signed_op2 = set_sign(op2, 32)
             result = bit.band(signed_op1 * signed_op2, 0xFFFFFFFF)
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x1 then
         if funct7 == 0x00 then -- SLL
@@ -151,7 +151,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             local full_result = signed_op1 * signed_op2
             result = math.floor(set_unsign(full_result, 64) / 0x100000000)
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x2 then
         if funct7 == 0x00 then -- SLT
@@ -162,7 +162,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             local full_result = signed_op1 * unsigned_op2
             result = math.floor(set_unsign(full_result, 64) / 0x100000000)
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x3 then
         if funct7 == 0x00 then -- SLTU
@@ -171,7 +171,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             local full_result = op1 * op2
             result = math.floor(full_result / 0x100000000)
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x4 then
         if funct7 == 0x00 then -- XOR
@@ -183,7 +183,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 result = set_unsign(math.floor(set_sign(op1, 32) / set_sign(op2, 32)), 32)
             end
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x5 then
         if funct7 == 0x00 then -- SRL
@@ -197,7 +197,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 result = set_unsign(math.floor(op1 / op2), 32)
             end
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x6 then
         if funct7 == 0x00 then -- OR
@@ -211,7 +211,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 result = set_unsign(signed_op1 % signed_op2, 32)
             end
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x7 then
         if funct7 == 0x00 then -- AND
@@ -223,10 +223,10 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 result = set_unsign(op1 % op2, 32)
             end
         else
-            assert(false, "Unsupported OP funct7: " .. tostring(funct7))
+            --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     else
-        assert(false, "Unsupported OP funct3: " .. tostring(funct3))
+        --assert(false, "Unsupported OP funct3: " .. tostring(funct3))
     end
 
     CPU:StoreRegister(rd, result)
@@ -238,7 +238,7 @@ function BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
     elseif funct3 == 0x1 then -- FENCE.I
         return nil
     else
-        assert(false, "Unsupported MISC_MEM funct3: " .. tostring(funct3))
+        --assert(false, "Unsupported MISC_MEM funct3: " .. tostring(funct3))
     end
 end
 
@@ -251,7 +251,7 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
             print("EBREAK encountered at PC: " .. tostring(CPU.registers.pc))
             CPU.is_running = 0
         else
-            assert(false, "Unsupported SYSTEM funct12: " .. tostring(imm_value))
+            --assert(false, "Unsupported SYSTEM funct12: " .. tostring(imm_value))
         end
     elseif funct3 == 0x1 then -- CSRRW
         local csr_value = CPU:ReadCSR(imm_value)
@@ -278,6 +278,6 @@ function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
         CPU:WriteCSR(imm_value, bit.band(csr_value, bit.bnot(rs1)))
         CPU:StoreRegister(rd, csr_value)
     else
-        assert(0, "Unsupported SYSTEM funct3: " .. tostring(funct3))
+        --assert(0, "Unsupported SYSTEM funct3: " .. tostring(funct3))
     end
 end

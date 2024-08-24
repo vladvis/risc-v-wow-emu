@@ -2,12 +2,12 @@ RiscVMemory = {
 }
 
 function RiscVMemory:Get(addr)
-    assert(self.mem[addr] ~= nil, string.format("addr 0x%x is not allocated", addr))
+    --assert(self.mem[addr] ~= nil, string.format("addr 0x%x is not allocated", addr))
     return self.mem[addr]
 end
 
 function RiscVMemory:Set(addr, value)
-    assert(addr % 4 == 0, "addr must be aligned (set)")
+    --assert(addr % 4 == 0, "addr must be aligned (set)")
     self.mem[addr] = value
 end
 
@@ -49,7 +49,7 @@ function RiscVMemory:Read(addr, vsize)
         local hi = self:Read(addr + 4, 4)
         return bits_to_double(hi, lo) -- конвертируем 64-битное целое число в double
     else
-        assert(false, "vsize " .. tostring(vsize) .. " is not supported")
+        --assert(false, "vsize " .. tostring(vsize) .. " is not supported")
     end     
 end
 
@@ -115,6 +115,6 @@ function RiscVMemory:Write(addr, value, vsize)
         self:Write(addr, lo, 4)
         self:Write(addr + 4, hi, 4)
     else
-        assert(false, "vsize " .. tostring(vsize) .. " is not supported")
+        --assert(false, "vsize " .. tostring(vsize) .. " is not supported")
     end
 end

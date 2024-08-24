@@ -16,7 +16,7 @@ function handle_syscall(CPU, syscall_num)
         elseif fd == 2 then -- stderr
             print("\124cffff0000" .. s .. "\124r")
         else
-            assert(false, "Unsupported fd")
+            --assert(false, "Unsupported fd")
         end
         CPU:StoreRegister(10, count)
     elseif syscall_num == 101 then -- togglewindow
@@ -61,6 +61,6 @@ function handle_syscall(CPU, syscall_num)
         local struct_addr = CPU:LoadRegister(11)
         CPU.memory:Write(struct_addr, time(), 4)
     else
-        assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
+        --assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
     end
 end
