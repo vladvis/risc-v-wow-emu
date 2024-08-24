@@ -299,7 +299,11 @@ function RiscVCore:InitCPU(init_handler)
     self.jumped = false
     self.is_running = 1
     self.counter = 0
+    
     self.last_frame = GetTime()
+    self.start_time = GetTime()
+    self.frame_cnt = 0
+
 end
 
 function RiscVCore:Step()
