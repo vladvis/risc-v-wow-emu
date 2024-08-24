@@ -4,7 +4,8 @@ from elftools.elf.elffile import ELFFile
 from jinja2 import Environment, FileSystemLoader
 
 def load_elf_to_memory(elf_data, stack_size=0x1000, stack_start=0x7ff00000):
-    memory_map = {}
+    from collections import defaultdict
+    memory_map = defaultdict(int)
     entrypoint = 0
     heap_start = None
 
@@ -16,25 +17,14 @@ def load_elf_to_memory(elf_data, stack_size=0x1000, stack_start=0x7ff00000):
     entrypoint = elf.header.e_entry
 
     # Iterate over the sections
-    for section in elf.iter_sections():
+    sections = [section for section in elf.iter_sections() if section['sh_flags'] & 0x2]
+    for section in sections:
         section_addr = section['sh_addr']
-        section_size = section['sh_size']
-
-        if section['sh_flags'] & 0x2:  # Check if the section is allocated (SHF_ALLOC)
-            # Get the section's data
-            section_data = section.data()
-
-            # Fill the memory map with the section's data
-            for i in range(0, len(section_data), 4):
-                address = section_addr + i
-                # Assuming little-endian encoding for the words
-                word = int.from_bytes(section_data[i:i+4], byteorder='little')
-                memory_map[address] = word
-        else:
-            # If the section is not allocated, initialize it with zeros
-            for i in range(0, section_size, 4):
-                address = section_addr + i
-                memory_map[address] = 0x0
+        section_data = section.data()
+        for i in range(0, len(section_data), 4):
+            address = section_addr + i
+            word = int.from_bytes(section_data[i:i+4], byteorder='little')
+            memory_map[address] = word
 
         # Determine the heap start as the end of the highest section
         if heap_start is None or section_addr + section_size > heap_start:
@@ -64,12 +54,11 @@ def generate_lua_script(name, entrypoint, stack_pointer, heap_start, gp_pointer,
     template = env.get_template('init.lua.j2')
 
     chunks = []
-    keys_count = len(memory_map)
-    chunk_len = 20000
+    chunk_len = 50000  # Increase chunk size to reduce the number of chunks
 
-    keys = list(memory_map.keys())
-    for i in range(0, keys_count, chunk_len):
-         chunks.append({ key: memory_map[key] for key in keys[i:i+chunk_len] })
+    sorted_keys = sorted(memory_map.keys())
+    for i in range(0, len(sorted_keys), chunk_len):
+        chunks.append({key: memory_map[key] for key in sorted_keys[i:i+chunk_len]})
 
     # Render the template with the provided data
     lua_script = template.render(
