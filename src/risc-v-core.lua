@@ -308,108 +308,98 @@ end
 
 function RiscVCore:Step()
     local instruction = self.memory:Get(self.registers.pc)
-    --assert(instruction ~= nil, "out of bound execution")
+    local instr_cache = self.instr_cache
+    local opcodes = self.opcodes
+    local registers = self.registers
+    local bit_band = bit.band
+    local bit_rshift = bit.rshift
+    local bit_bor = bit.bor
+    local set_sign = set_sign
 
-    if self.instr_cache[instruction] ~= nil then
-        self.opcodes[self.instr_cache[instruction].opcode].handler(self, unpack(self.instr_cache[instruction].args))
+    if instr_cache[instruction] then
+        local cached = instr_cache[instruction]
+        opcodes[cached.opcode].handler(self, unpack(cached.args))
     else
+        local opcode = bit_band(instruction, 0x7f)
+        local opcode_info = opcodes[opcode]
+        local instr_type = opcode_info.type
+        local handler = opcode_info.handler
 
-        opcode = bit.band(instruction, 0x7f)
-        --assert(self.opcodes[opcode], "opcode ".. tostring(opcode) .." is not implemented")
-
-        if self.opcodes[opcode].type == "U" then
-            
+        if instr_type == "U" then
             local rd = decode_rd(instruction)
-            local imm_value = bit.band(instruction, 0xfffff000) -- instr & 0xfffff000
+            local imm_value = bit_band(instruction, 0xfffff000)
+            instr_cache[instruction] = { opcode = opcode, args = { rd, imm_value } }
+            handler(self, rd, imm_value)
 
-            self.instr_cache[instruction] = { opcode = opcode, args = { rd, imm_value } }
-            self.opcodes[opcode].handler(self, rd, imm_value)
-
-        elseif self.opcodes[opcode].type == "J" then
-
+        elseif instr_type == "J" then
             local rd = decode_rd(instruction)
-            local imm_value = bit.band(bit.rshift(instruction, 20), 0x7fe)
-            imm_value = bit.bor(imm_value, bit.band(bit.rshift(instruction, 9), 0x800))
-            imm_value = bit.bor(imm_value, bit.band(instruction, 0xff000))
-            imm_value = bit.bor(imm_value, bit.band(bit.rshift(instruction, 11), 0x100000))
+            local imm_value = bit_band(bit_rshift(instruction, 20), 0x7fe)
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 9), 0x800))
+            imm_value = bit_bor(imm_value, bit_band(instruction, 0xff000))
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 11), 0x100000))
             imm_value = set_sign(imm_value, 21)
-            
-            self.instr_cache[instruction] = { opcode = opcode, args = { rd, imm_value } }
-            self.opcodes[opcode].handler(self, rd, imm_value)
+            instr_cache[instruction] = { opcode = opcode, args = { rd, imm_value } }
+            handler(self, rd, imm_value)
 
-        elseif self.opcodes[opcode].type == "I" then
-
+        elseif instr_type == "I" then
             local rd = decode_rd(instruction)
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
-            local imm_value = bit.band(bit.rshift(instruction, 20), 0xfff) -- (instr >> 20) & 0xfff
+            local imm_value = bit_band(bit_rshift(instruction, 20), 0xfff)
             imm_value = set_sign(imm_value, 12)
-            
-            self.instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, imm_value } }
-            self.opcodes[opcode].handler(self, rd, funct3, rs1, imm_value)
+            instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, imm_value } }
+            handler(self, rd, funct3, rs1, imm_value)
 
-        elseif self.opcodes[opcode].type == "B" then
-
+        elseif instr_type == "B" then
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
             local rs2 = decode_rs2(instruction)
-            local imm_value = bit.band(bit.rshift(instruction, 7), 0x1e)
-            imm_value = bit.bor(imm_value, bit.band(bit.rshift(instruction, 20), 0x7e0))
-            imm_value = bit.bor(imm_value, bit.band(bit.lshift(instruction, 4), 0x800))
-            imm_value = bit.bor(imm_value, bit.band(bit.rshift(instruction, 19), 0x1000))
+            local imm_value = bit_band(bit_rshift(instruction, 7), 0x1e)
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 20), 0x7e0))
+            imm_value = bit_bor(imm_value, bit_band(bit.lshift(instruction, 4), 0x800))
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 19), 0x1000))
             imm_value = set_sign(imm_value, 13)
+            instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
+            handler(self, funct3, rs1, rs2, imm_value)
 
-            self.instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
-            self.opcodes[opcode].handler(self, funct3, rs1, rs2, imm_value)
-
-        elseif self.opcodes[opcode].type == "S" then
-
+        elseif instr_type == "S" then
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
             local rs2 = decode_rs2(instruction)
-            local imm_value = bit.bor(bit.lshift(bit.rshift(instruction, 25), 5), decode_rd(instruction))
+            local imm_value = bit_bor(bit.lshift(bit_rshift(instruction, 25), 5), decode_rd(instruction))
             imm_value = set_sign(imm_value, 12)
+            instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
+            handler(self, funct3, rs1, rs2, imm_value)
 
-            self.instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
-            self.opcodes[opcode].handler(self, funct3, rs1, rs2, imm_value)
-
-        elseif self.opcodes[opcode].type == "R" then
-
+        elseif instr_type == "R" then
             local rd = decode_rd(instruction)
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
             local rs2 = decode_rs2(instruction)
-            local funct7 = bit.rshift(instruction, 25)
+            local funct7 = bit_rshift(instruction, 25)
+            instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, rs2, funct7 } }
+            handler(self, rd, funct3, rs1, rs2, funct7)
 
-            self.instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, rs2, funct7 } }
-            self.opcodes[opcode].handler(self, rd, funct3, rs1, rs2, funct7)
-
-        elseif self.opcodes[opcode].type == "R4" then
-
+        elseif instr_type == "R4" then
             local rd = decode_rd(instruction)
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
             local rs2 = decode_rs2(instruction)
-            local funct2 = bit.rshift(instruction, 25)
-            local rs3 = decode_rs3(instruction) 
-
-            self.instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, rs2, funct2, rs3 } }
-            self.opcodes[opcode].handler(self, rd, funct3, rs1, rs2, funct2, rs3)
-
-        else
-            --assert(false, "opcode encoding " .. tostring(self.opcodes[opcode].type) .. " is not implemented")
+            local funct2 = bit_rshift(instruction, 25)
+            local rs3 = decode_rs3(instruction)
+            instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, rs2, funct2, rs3 } }
+            handler(self, rd, funct3, rs1, rs2, funct2, rs3)
         end
     end
 
     if self.jumped then
         self.jumped = false
     else
-        self.registers.pc = self.registers.pc + 4
+        registers.pc = registers.pc + 4
     end
 
     self.counter = self.counter + 1
     if self.counter % 100000 == 0 then
-        --print("pause", self.counter, self.counter % 10000, self.counter % 10000 == 0)
         self:MaybeYieldCPU()
     end
 end
