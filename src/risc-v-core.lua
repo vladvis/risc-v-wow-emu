@@ -303,7 +303,7 @@ function RiscVCore:InitCPU(init_handler)
     self.last_frame = GetTime()
     self.start_time = GetTime()
     self.frame_cnt = 0
-    
+
 end
 
 function RiscVCore:Step()

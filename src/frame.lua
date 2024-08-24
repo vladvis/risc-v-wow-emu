@@ -326,6 +326,7 @@ function FrameBufferTestMixin:OnLoad()
             pixel:SetColorTexture(0, 0, 0)
             pixel:SetSize(2, 2)
             pixel:SetDrawLayer("ARTWORK", 1)
+            pixel.color = 0
             table.insert(self.FrameBuffer, pixel)
         end
     end
@@ -388,7 +389,10 @@ function RenderFrame(CPU, framebuffer_addr)
                 local data_loc = bit.band(data, 0xff)
                 local color = vga_to_rgb[data_loc]
                 local pixel = GetPixel(x + i, y, precalc_partn[y], precalc_localy[y], offset)
-                pixel:SetColorTexture(unpack(color))
+                if color ~= pixel.color then
+                    pixel:SetColorTexture(unpack(color))
+                    pixel.color = data_loc
+                end
                 data = bit.rshift(data, 8)
             end
 
