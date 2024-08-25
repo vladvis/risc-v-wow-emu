@@ -1,7 +1,7 @@
 # Define variables
 TESTS_DIR := src
 BIN_DIR := lua_bin
-SCRIPT := ./elf2lua.py
+SCRIPT := ../tools/elf2lua.py
 
 # Get the list of subdirectories in the tests directory
 SUBDIRS := $(wildcard $(TESTS_DIR)/*)
