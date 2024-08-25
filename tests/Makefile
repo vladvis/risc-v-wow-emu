@@ -1,7 +1,8 @@
 # Define variables
 TESTS_DIR := src
 BIN_DIR := lua_bin
-SCRIPT := ./elf2lua.py
+SCRIPT := ../tools/elf2lua.py
+SCRIPT_TEMPLATE := ../tools/init.lua.j2
 
 # Get the list of subdirectories in the tests directory
 SUBDIRS := $(wildcard $(TESTS_DIR)/*)
@@ -16,7 +17,7 @@ all: $(BIN_DIR) $(OUT_FILES)
 $(BIN_DIR)/%: $(TESTS_DIR)/%
 	$(MAKE) -C $< 
 	dir_name=$(shell basename $<); \
-	cat $</out | python3 $(SCRIPT) $$dir_name > $@.lua
+	cat $</out | python3 $(SCRIPT) $$dir_name $(SCRIPT_TEMPLATE) > $@.lua
 	cp $</verify.lua $@_verify.lua
 	
 # Ensure the bin directory exists
