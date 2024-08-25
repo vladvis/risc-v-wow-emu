@@ -1,16 +1,22 @@
 local GetAddOnMetadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
 local version = GetAddOnMetadata("RiscVEmu", "Version") or "SVN"
+local VERSION = "RiscVEmulator v" .. version .. " for World of Warcraft"
 
-function Resume(CPU)
+function RVEMU_Resume(CPU)
     --print("resume", CPU.counter)
-
-    CPU.is_running = 1
-    CPU:Run()
+    if CPU.is_stopped ~= 1 then
+        CPU.is_running = 1
+        CPU:Run()
+    end
 end
 
-function GetCore()
+function RVEMU_Stop(CPU)
+    CPU.is_stopped = 1
+    CPU.is_running = 0
+end
+
+function RVEMU_GetCore()
     local RiscVCore = {
-        VERSION = "RiscVEmulator v" .. version .. " for World of Warcraft"
     }
 
     local function bin(x)
@@ -163,115 +169,115 @@ function GetCore()
         self.opcodes[bin("0110111")] = {
             name = "LUI",
             type = "U",
-            handler = BaseInstructions_LUI
+            handler = RVEMU_BaseInstructions_LUI
         }
 
         self.opcodes[bin("0010111")] = {
             name = "AUIPC",
             type = "U",
-            handler = BaseInstructions_AUIPC
+            handler = RVEMU_BaseInstructions_AUIPC
         }
 
         self.opcodes[bin("1101111")] = {
             name = "JAL",
             type = "J",
-            handler = BaseInstructions_JAL
+            handler = RVEMU_BaseInstructions_JAL
         }
 
         self.opcodes[bin("1100111")] = {
             name = "JALR",
             type = "I",
-            handler = BaseInstructions_JALR
+            handler = RVEMU_BaseInstructions_JALR
         }
 
         self.opcodes[bin("1100011")] = {
             name = "BRANCH",
             type = "B",
-            handler = BaseInstructions_BRANCH
+            handler = RVEMU_BaseInstructions_BRANCH
         }
 
         self.opcodes[bin("0000011")] = {
             name = "LOAD",
             type = "I",
-            handler = BaseInstructions_LOAD
+            handler = RVEMU_BaseInstructions_LOAD
         }
 
         self.opcodes[bin("0100011")] = {
             name = "STORE",
             type = "S",
-            handler = BaseInstructions_STORE
+            handler = RVEMU_BaseInstructions_STORE
         }
 
         self.opcodes[bin("0010011")] = {
             name = "OP-IMM",
             type = "I",
-            handler = BaseInstructions_OP_IMM
+            handler = RVEMU_BaseInstructions_OP_IMM
         }
 
         self.opcodes[bin("0110011")] = {
             name = "OP",
             type = "R",
-            handler = BaseInstructions_OP
+            handler = RVEMU_BaseInstructions_OP
         }
 
         self.opcodes[bin("0001111")] = {
             name = "MISC-MEM",
             type = "I",
-            handler = BaseInstructions_MISC_MEM
+            handler = RVEMU_BaseInstructions_MISC_MEM
         }
 
         self.opcodes[bin("1110011")] = {
             name = "SYSTEM",
             type = "I",
-            handler = BaseInstructions_SYSTEM
+            handler = RVEMU_BaseInstructions_SYSTEM
         }
 
         self.opcodes[bin("0000111")] = {
             name = "FLW",
             type = "I",
-            handler = FPU_Load
+            handler = RVEMU_FPU_Load
         }
 
         self.opcodes[bin("0100111")] = {
             name = "FSW",
             type = "S",
-            handler = FPU_Store
+            handler = RVEMU_FPU_Store
         }
         
         self.opcodes[bin("1000011")] = {
             name = "FMADD.S",
             type = "R4",
-            handler = FPU_FMADD
+            handler = RVEMU_FPU_FMADD
         }
         
         self.opcodes[bin("1000111")] = {
             name = "FMSUB.S",
             type = "R4",
-            handler = FPU_FMSUB
+            handler = RVEMU_FPU_FMSUB
         }
         
         self.opcodes[bin("1001011")] = {
             name = "FNMSUB.S",
             type = "R4",
-            handler = FPU_FNMSUB
+            handler = RVEMU_FPU_FNMSUB
         }
         
         self.opcodes[bin("1001111")] = {
             name = "FNMADD.S",
             type = "R4",
-            handler = FPU_FNMADD
+            handler = RVEMU_FPU_FNMADD
         }
         
         self.opcodes[bin("1010011")] = {
             name = "OP-FP",
             type = "R",
-            handler = FPU_OP_FP
+            handler = RVEMU_FPU_OP_FP
         }
 
-        self.frame = GetFrame(self)
+        self.frame = RVEMU_GetFrame(self)
 
         self:InitCSR()
-        self.memory = GetMemory()
+        self.memory = RVEMU_GetMemory()
         self.instr_cache = {}
 
         self.pressed_keys = {}
@@ -285,6 +291,7 @@ function GetCore()
 
         self.jumped = false
         self.is_running = 1
+        self.is_stopped = 0
         self.counter = 0
         
         self.last_frame = GetTime()
@@ -301,7 +308,6 @@ function GetCore()
         local bit_band = bit.band
         local bit_rshift = bit.rshift
         local bit_bor = bit.bor
-        local set_sign = set_sign
 
         if instr_cache[instruction] then
             local cached = instr_cache[instruction]
@@ -324,7 +330,7 @@ function GetCore()
                 imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 9), 0x800))
                 imm_value = bit_bor(imm_value, bit_band(instruction, 0xff000))
                 imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 11), 0x100000))
-                imm_value = set_sign(imm_value, 21)
+                imm_value = RVEMU_set_sign(imm_value, 21)
                 instr_cache[instruction] = { opcode = opcode, args = { rd, imm_value } }
                 handler(self, rd, imm_value)
 
@@ -333,7 +339,7 @@ function GetCore()
                 local funct3 = decode_funct3(instruction)
                 local rs1 = decode_rs1(instruction)
                 local imm_value = bit_band(bit_rshift(instruction, 20), 0xfff)
-                imm_value = set_sign(imm_value, 12)
+                imm_value = RVEMU_set_sign(imm_value, 12)
                 instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, imm_value } }
                 handler(self, rd, funct3, rs1, imm_value)
 
@@ -345,7 +351,7 @@ function GetCore()
                 imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 20), 0x7e0))
                 imm_value = bit_bor(imm_value, bit_band(bit.lshift(instruction, 4), 0x800))
                 imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 19), 0x1000))
-                imm_value = set_sign(imm_value, 13)
+                imm_value = RVEMU_set_sign(imm_value, 13)
                 instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
                 handler(self, funct3, rs1, rs2, imm_value)
 
@@ -354,7 +360,7 @@ function GetCore()
                 local rs1 = decode_rs1(instruction)
                 local rs2 = decode_rs2(instruction)
                 local imm_value = bit_bor(bit.lshift(bit_rshift(instruction, 25), 5), decode_rd(instruction))
-                imm_value = set_sign(imm_value, 12)
+                imm_value = RVEMU_set_sign(imm_value, 12)
                 instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
                 handler(self, funct3, rs1, rs2, imm_value)
 
@@ -395,7 +401,7 @@ function GetCore()
         local now = time()
         if now - self.last_sleep > 2 then
             self.is_running = 0
-            C_Timer.After(0.01, function() Resume(self) end)
+            C_Timer.After(0.01, function() RVEMU_Resume(self) end)
         end
     end
 

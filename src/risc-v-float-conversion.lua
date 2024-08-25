@@ -1,4 +1,4 @@
-function float_to_bits(f)
+function RVEMU_float_to_bits(f)
     if f == 1/0 then
         return 0x7f800000
     end
@@ -20,7 +20,7 @@ function float_to_bits(f)
     return bit.bor(bit.lshift(sign, 31), bit.lshift(exponent, 23), math.floor(mantissa))
 end
 
-function bits_to_float(b)
+function RVEMU_bits_to_float(b)
     local sign = bit.band(bit.rshift(b, 31), 0x1)
     local exponent = bit.band(bit.rshift(b, 23), 0xFF)
     local mantissa = bit.band(b, 0x7FFFFF)
@@ -44,7 +44,7 @@ function bits_to_float(b)
     end
 end
 
-function double_to_bits(d)
+function RVEMU_double_to_bits(d)
     local sign = 0
     if d < 0 then
         sign = 1
@@ -66,7 +66,7 @@ function double_to_bits(d)
     return hi, lo
 end
 
-function bits_to_double(hi, lo)
+function RVEMU_bits_to_double(hi, lo)
     local sign = bit.band(bit.rshift(hi, 31), 0x1)
     local exponent = bit.band(bit.rshift(hi, 20), 0x7FF)
     local mantissa_hi = bit.band(hi, 0xFFFFF)

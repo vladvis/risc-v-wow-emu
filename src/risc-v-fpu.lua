@@ -1,13 +1,13 @@
-INF = 1/0
-NAN = 0/0
-INF_INV = -1/0
-MINUS_Z = 0/INF_INV
+RVEMU_INF = 1/0
+RVEMU_NAN = 0/0
+RVEMU_INF_INV = -1/0
+RVEMU_MINUS_Z = 0/RVEMU_INF_INV
 
 local function get_sign(x)
     return x >= 0 and 1 or -1
 end
 
-function FPU_Load(CPU, rd, funct3, rs1, imm_value)
+function RVEMU_FPU_Load(CPU, rd, funct3, rs1, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = nil
 
@@ -24,7 +24,7 @@ function FPU_Load(CPU, rd, funct3, rs1, imm_value)
     CPU.fregisters[rd].value = value
 end
 
-function FPU_Store(CPU, funct3, rs1, rs2, imm_value)
+function RVEMU_FPU_Store(CPU, funct3, rs1, rs2, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = CPU.fregisters[rs2].value
 
@@ -39,7 +39,7 @@ function FPU_Store(CPU, funct3, rs1, rs2, imm_value)
     end
 end
 
-function FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
+function RVEMU_FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
     local op3 = CPU.fregisters[rs3].value
@@ -47,7 +47,7 @@ function FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
-function FPU_FMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
+function RVEMU_FPU_FMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
     local op3 = CPU.fregisters[rs3].value
@@ -55,7 +55,7 @@ function FPU_FMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
-function FPU_FNMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
+function RVEMU_FPU_FNMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
     local op3 = CPU.fregisters[rs3].value
@@ -63,7 +63,7 @@ function FPU_FNMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
-function FPU_FNMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
+function RVEMU_FPU_FNMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
     local op3 = CPU.fregisters[rs3].value
@@ -71,7 +71,7 @@ function FPU_FNMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
-function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
+function RVEMU_FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
     local result = nil
@@ -145,7 +145,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         if rs2 == 0x00 then -- FCVT.W.S | FCVT.W.D
             result = math.max(-0x80000000, result)
             result = math.min(0x7FFFFFFF, result)
-            result = set_unsign(result, 32)
+            result = RVEMU_set_unsign(result, 32)
         elseif rs2 == 0x01 then -- FCVT.WU.S | FCVT.WU.D
             result = math.max(0, result)
             result = math.min(0xFFFFFFFF, result)
@@ -154,7 +154,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         end
     elseif funct6 == 0x34 then -- (ATTENTION: rs1 is integer)
         if rs2 == 0x00 then -- FCVT.S.W | FCVT.D.W
-            result = set_sign(CPU:LoadRegister(rs1), 32)
+            result = RVEMU_set_sign(CPU:LoadRegister(rs1), 32)
         elseif rs2 == 0x01 then -- FCVT.S.WU | FCVT.D.WU
             result = CPU:LoadRegister(rs1)
         else
@@ -162,17 +162,17 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
         end
     elseif funct6 == 0x38 then -- (ATTENTION: rd is integer)
         if funct3 == 0x00 then -- FMV.X.W
-            result = float_to_bits(op1)
+            result = RVEMU_float_to_bits(op1)
         elseif funct3 == 0x01 then -- FCLASS.S | FCLASS.D
-            if op1 == INF_INV then
+            if op1 == RVEMU_INF_INV then
                 result = bit.lshift(1, 0)
-            elseif op1 == MINUS_Z then
+            elseif op1 == RVEMU_MINUS_Z then
                 result = bit.lshift(1, 3)
             elseif op1 == 0 then
                 result = bit.lshift(1, 4)
-            elseif op1 == INF then
+            elseif op1 == RVEMU_INF then
                 result = bit.lshift(1, 7)
-            elseif op1 == NAN then
+            elseif op1 == RVEMU_NAN then
                 result = bit.lshift(1, 8)
             elseif op1 < 0 then
                 result = bit.lshift(1, 1)
@@ -185,7 +185,7 @@ function FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
             --assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
         end
     elseif funct6 == 0x3c then -- FMV.W.X (ATTENTION: rs1 is integer)
-        result = bits_to_float(CPU:LoadRegister(rs1))
+        result = RVEMU_bits_to_float(CPU:LoadRegister(rs1))
     else
         --assert(false, "Unsupported FP operation funct7: " .. tostring(funct7) .. " " .. tostring(funct6))
     end

@@ -19,7 +19,7 @@ RV32_KEYMAP = {
     N = 17
 }
 
-function GetFrame(CPU)
+function RVEMU_GetFrame(CPU)
     local Frame = {}
     Frame.CPU = CPU
 
@@ -374,6 +374,7 @@ function GetFrame(CPU)
     Frame.FrameBufferTestFrameParted[1]:SetScript("OnKeyDown", FrameOnKeyDown)
     Frame.FrameBufferTestFrameParted[1]:SetScript("OnKeyUp", FrameOnKeyUp)
 
+    Frame.opened = false
     Frame.precalc_partn = {}
     Frame.precalc_localy = {}
     Frame.PartHeight = 50
@@ -411,8 +412,18 @@ function GetFrame(CPU)
     end
 
     function Frame:ToggleWindow()
-        for i = 1, 4 do
-            self.FrameBufferTestFrameParted[i]:Show()
+        if self.opened then
+            self.FrameBufferTestFrameParted[1]:EnableKeyboard(false)
+            for i = 1, 4 do
+                self.FrameBufferTestFrameParted[i]:Hide()
+            end
+            self.opened = false
+        else
+            self.FrameBufferTestFrameParted[1]:EnableKeyboard(true)
+            for i = 1, 4 do
+                self.FrameBufferTestFrameParted[i]:Show()
+            end
+            self.opened = true
         end
     end
 

@@ -1,4 +1,4 @@
-function set_sign(value, bits)
+function RVEMU_set_sign(value, bits)
     local max_int = bit.lshift(1, bits - 1) - 1
     if value > max_int then
         return value - (max_int + 1)*2
@@ -7,7 +7,7 @@ function set_sign(value, bits)
     end
 end
 
-function set_unsign(value, bits)
+function RVEMU_set_unsign(value, bits)
     local max_uint = nil
     if bits == 32 then
         max_uint = 0x100000000
@@ -21,15 +21,15 @@ function set_unsign(value, bits)
     end
 end
 
-function BaseInstructions_LUI(CPU, rd, imm_value)
+function RVEMU_BaseInstructions_LUI(CPU, rd, imm_value)
     CPU:StoreRegister(rd, imm_value)
 end
 
-function BaseInstructions_AUIPC(CPU, rd, imm_value)
+function RVEMU_BaseInstructions_AUIPC(CPU, rd, imm_value)
     CPU:StoreRegister(rd, CPU.registers.pc + imm_value)
 end
 
-function BaseInstructions_JAL(CPU, rd, imm_value)
+function RVEMU_BaseInstructions_JAL(CPU, rd, imm_value)
     local return_address = CPU.registers.pc + 4
     CPU:StorePC(CPU.registers.pc + imm_value)
 
@@ -38,7 +38,7 @@ function BaseInstructions_JAL(CPU, rd, imm_value)
     end
 end
 
-function BaseInstructions_JALR(CPU, rd, funct3, rs1, imm_value)
+function RVEMU_BaseInstructions_JALR(CPU, rd, funct3, rs1, imm_value)
     --assert(funct3 == 0, "funct3 is reserved for JALR")
 
     local return_address = CPU.registers.pc + 4
@@ -53,7 +53,7 @@ local function bool_to_number(value)
     return value == true and 1 or 0
 end
 
-function BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
+function RVEMU_BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
     local op1 = CPU:LoadRegister(rs1)
     local op2 = CPU:LoadRegister(rs2)
     local cond = nil
@@ -63,8 +63,8 @@ function BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
     if test == 0 then -- BEQ | BNE
         cond = op1 == op2
     elseif test == 2 then -- BLT | BGE
-        op1 = set_sign(op1, 32)
-        op2 = set_sign(op2, 32)
+        op1 = RVEMU_set_sign(op1, 32)
+        op2 = RVEMU_set_sign(op2, 32)
         cond = op1 < op2
     elseif test == 3 then -- BLTU | BGEU
         cond = op1 < op2
@@ -79,15 +79,15 @@ function BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
     end
 end
 
-function BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
+function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = nil
     if funct3 == 0 then -- LB
         value = CPU.memory:Read(addr, 1)
-        value = set_unsign(set_sign(value, 8), 32)
+        value = RVEMU_set_unsign(RVEMU_set_sign(value, 8), 32)
     elseif funct3 == 1 then -- LH
         value = CPU.memory:Read(addr, 2)
-        value = set_unsign(set_sign(value, 16), 32)
+        value = RVEMU_set_unsign(RVEMU_set_sign(value, 16), 32)
     elseif funct3 == 2 then -- LW
         value = CPU.memory:Read(addr, 4)
     elseif funct3 == 4 then -- LBU
@@ -101,7 +101,7 @@ function BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
     CPU:StoreRegister(rd, value)
 end
 
-function BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
+function RVEMU_BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = CPU:LoadRegister(rs2)
     
@@ -116,14 +116,14 @@ function BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
     end
 end
 
-function BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
+function RVEMU_BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
     local op1 = CPU:LoadRegister(rs1)
     local result = nil
 
     if funct3 == 0x0 then -- ADDI
         result = op1 + imm_value
     elseif funct3 == 0x2 then -- SLTI
-        result = set_sign(op1, 32) < set_sign(imm_value, 12) and 1 or 0
+        result = RVEMU_set_sign(op1, 32) < RVEMU_set_sign(imm_value, 12) and 1 or 0
     elseif funct3 == 0x3 then -- SLTIU
         result = op1 < imm_value and 1 or 0
     elseif funct3 == 0x4 then -- XORI
@@ -148,7 +148,7 @@ function BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
     CPU:StoreRegister(rd, result)
 end
 
-function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
+function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
     local op1 = CPU:LoadRegister(rs1)
     local op2 = CPU:LoadRegister(rs2)
     local result = nil
@@ -159,8 +159,8 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
         elseif funct7 == 0x20 then -- SUB
             result = bit.band(op1 - op2, 0xFFFFFFFF)
         elseif funct7 == 0x01 then -- MUL (RV32M)
-            local signed_op1 = set_sign(op1, 32)
-            local signed_op2 = set_sign(op2, 32)
+            local signed_op1 = RVEMU_set_sign(op1, 32)
+            local signed_op2 = RVEMU_set_sign(op2, 32)
             result = bit.band(signed_op1 * signed_op2, 0xFFFFFFFF)
         else
             --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -169,21 +169,21 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
         if funct7 == 0x00 then -- SLL
             result = bit.lshift(op1, bit.band(op2, 0x1F))
         elseif funct7 == 0x01 then -- MULH
-            local signed_op1 = set_sign(op1, 32)
-            local signed_op2 = set_sign(op2, 32)
+            local signed_op1 = RVEMU_set_sign(op1, 32)
+            local signed_op2 = RVEMU_set_sign(op2, 32)
             local full_result = signed_op1 * signed_op2
-            result = math.floor(set_unsign(full_result, 64) / 0x100000000)
+            result = math.floor(RVEMU_set_unsign(full_result, 64) / 0x100000000)
         else
             --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
     elseif funct3 == 0x2 then
         if funct7 == 0x00 then -- SLT
-            result = bit.band(set_sign(op1, 32) < set_sign(op2, 32) and 1 or 0, 0xFFFFFFFF)
+            result = bit.band(RVEMU_set_sign(op1, 32) < RVEMU_set_sign(op2, 32) and 1 or 0, 0xFFFFFFFF)
         elseif funct7 == 0x01 then -- MULHSU
-            local signed_op1 = set_sign(op1, 32)
+            local signed_op1 = RVEMU_set_sign(op1, 32)
             local unsigned_op2 = op2
             local full_result = signed_op1 * unsigned_op2
-            result = math.floor(set_unsign(full_result, 64) / 0x100000000)
+            result = math.floor(RVEMU_set_unsign(full_result, 64) / 0x100000000)
         else
             --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
         end
@@ -203,7 +203,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             if op2 == 0 then
                 result = 0xFFFFFFFF
             else
-                result = set_unsign(math.floor(set_sign(op1, 32) / set_sign(op2, 32)), 32)
+                result = RVEMU_set_unsign(math.floor(RVEMU_set_sign(op1, 32) / RVEMU_set_sign(op2, 32)), 32)
             end
         else
             --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -217,7 +217,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             if op2 == 0 then
                 result = 0xFFFFFFFF
             else
-                result = set_unsign(math.floor(op1 / op2), 32)
+                result = RVEMU_set_unsign(math.floor(op1 / op2), 32)
             end
         else
             --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -229,9 +229,9 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             if op2 == 0 then
                 result = op1
             else
-                local signed_op1 = set_sign(op1, 32)
-                local signed_op2 = set_sign(op2, 32)
-                result = set_unsign(signed_op1 % signed_op2, 32)
+                local signed_op1 = RVEMU_set_sign(op1, 32)
+                local signed_op2 = RVEMU_set_sign(op2, 32)
+                result = RVEMU_set_unsign(signed_op1 % signed_op2, 32)
             end
         else
             --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -243,7 +243,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             if op2 == 0 then
                 result = op1
             else
-                result = set_unsign(op1 % op2, 32)
+                result = RVEMU_set_unsign(op1 % op2, 32)
             end
         else
             --assert(false, "Unsupported OP funct7: " .. tostring(funct7))
@@ -255,7 +255,7 @@ function BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
     CPU:StoreRegister(rd, result)
 end
 
-function BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
+function RVEMU_BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
     if funct3 == 0x0 then -- FENCE
         return nil
     elseif funct3 == 0x1 then -- FENCE.I
@@ -265,11 +265,11 @@ function BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
     end
 end
 
-function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
+function RVEMU_BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
     if funct3 == 0 then
         if imm_value == 0 then -- ECALL
             local syscall_num = CPU:LoadRegister(17)
-            handle_syscall(CPU, syscall_num)
+            RVEMU_handle_syscall(CPU, syscall_num)
         elseif imm_value == 1 then -- EBREAK
             print("EBREAK encountered at PC: " .. tostring(CPU.registers.pc))
             CPU.is_running = 0

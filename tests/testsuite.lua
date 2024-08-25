@@ -1,4 +1,4 @@
-function RunTests()
+function RVEMU_RunTests()
     local tests = 
     {
         --[[fib = { 
@@ -69,7 +69,7 @@ function RunTests()
 
     for name, test in pairs(tests) do
         print(string.format("Starting test %s...", name))
-        CPU = GetCore()
+        CPU = RVEMU_GetCore()
         CPU:InitCPU(test.init)
         CPU:Run()
         local result = test.verify(CPU)
@@ -77,4 +77,4 @@ function RunTests()
     end
 end
 
-RunTests()
+RVEMU_RunTests()
