@@ -411,19 +411,27 @@ function RVEMU_GetFrame(CPU)
         end
     end
 
+    function Frame:Show()
+        self.FrameBufferTestFrameParted[1]:EnableKeyboard(true)
+        for i = 1, 4 do
+            self.FrameBufferTestFrameParted[i]:Show()
+        end
+        self.opened = true
+    end
+
+    function Frame:Hide()
+        self.FrameBufferTestFrameParted[1]:EnableKeyboard(false)
+        for i = 1, 4 do
+            self.FrameBufferTestFrameParted[i]:Hide()
+        end
+        self.opened = false
+    end
+
     function Frame:ToggleWindow()
         if self.opened then
-            self.FrameBufferTestFrameParted[1]:EnableKeyboard(false)
-            for i = 1, 4 do
-                self.FrameBufferTestFrameParted[i]:Hide()
-            end
-            self.opened = false
+            self:Hide()
         else
-            self.FrameBufferTestFrameParted[1]:EnableKeyboard(true)
-            for i = 1, 4 do
-                self.FrameBufferTestFrameParted[i]:Show()
-            end
-            self.opened = true
+            self:Close()
         end
     end
 

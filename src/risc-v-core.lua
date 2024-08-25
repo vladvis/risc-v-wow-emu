@@ -10,11 +10,6 @@ function RVEMU_Resume(CPU)
     end
 end
 
-function RVEMU_Stop(CPU)
-    CPU.is_stopped = 1
-    CPU.is_running = 0
-end
-
 function RVEMU_GetCore()
     local RiscVCore = {
     }
@@ -410,6 +405,12 @@ function RVEMU_GetCore()
             print(string.format("x%d = 0x%x", i, self.registers[i]))
         end
         print(string.format("pc = 0x%x", self.registers.pc))
+    end
+
+    function RiscVCore:Stop()
+        self.frame:Hide()
+        self.is_stopped = 1
+        self.is_running = 0
     end
 
     function RiscVCore:Run()
