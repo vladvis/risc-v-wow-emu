@@ -16,7 +16,9 @@ RV32_KEYMAP = {
     UP = 12,
     LEFT = 13,
     DOWN = 14,
-    RIGHT = 15
+    RIGHT = 15,
+    Y = 16,
+    N = 17
 }
 --[[
 for i = 0, 255 do
