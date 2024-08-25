@@ -1,3 +1,7 @@
+-- Sets the sign of a value based on the specified number of bits.
+-- @param value The value to set the sign for.
+-- @param bits The number of bits to consider for the sign.
+-- @return The value with the sign set.
 function RVEMU_set_sign(value, bits)
     local max_int = bit.lshift(1, bits - 1) - 1
     if value > max_int then
@@ -7,6 +11,10 @@ function RVEMU_set_sign(value, bits)
     end
 end
 
+-- Sets the unsigned representation of a value based on the specified number of bits.
+-- @param value The value to set the unsigned representation for.
+-- @param bits The number of bits to consider for the unsigned representation.
+-- @return The unsigned representation of the value.
 function RVEMU_set_unsign(value, bits)
     local max_uint = nil
     if bits == 32 then
@@ -21,14 +29,26 @@ function RVEMU_set_unsign(value, bits)
     end
 end
 
+-- Loads an immediate value into a register (LUI instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register.
+-- @param imm_value The immediate value to load.
 function RVEMU_BaseInstructions_LUI(CPU, rd, imm_value)
     CPU:StoreRegister(rd, imm_value)
 end
 
+-- Adds an immediate value to the program counter and stores the result in a register (AUIPC instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register.
+-- @param imm_value The immediate value to add to the program counter.
 function RVEMU_BaseInstructions_AUIPC(CPU, rd, imm_value)
     CPU:StoreRegister(rd, CPU.registers.pc + imm_value)
 end
 
+-- Jumps to a target address and stores the return address in a register (JAL instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register for the return address.
+-- @param imm_value The immediate value for the target address.
 function RVEMU_BaseInstructions_JAL(CPU, rd, imm_value)
     local return_address = CPU.registers.pc + 4
     CPU:StorePC(CPU.registers.pc + imm_value)
@@ -38,6 +58,12 @@ function RVEMU_BaseInstructions_JAL(CPU, rd, imm_value)
     end
 end
 
+-- Jumps to a target address computed from a register and an immediate value, and stores the return address in a register (JALR instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register for the return address.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the base address.
+-- @param imm_value The immediate value for the address offset.
 function RVEMU_BaseInstructions_JALR(CPU, rd, funct3, rs1, imm_value)
     --assert(funct3 == 0, "funct3 is reserved for JALR")
 
@@ -53,6 +79,12 @@ local function bool_to_number(value)
     return value == true and 1 or 0
 end
 
+-- Performs a conditional branch based on the comparison of two registers (BRANCH instruction).
+-- @param CPU The CPU object.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The first source register for the comparison.
+-- @param rs2 The second source register for the comparison.
+-- @param imm_value The immediate value for the branch target address.
 function RVEMU_BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
     local op1 = CPU:LoadRegister(rs1)
     local op2 = CPU:LoadRegister(rs2)
@@ -79,6 +111,12 @@ function RVEMU_BaseInstructions_BRANCH(CPU, funct3, rs1, rs2, imm_value)
     end
 end
 
+-- Loads a value from memory into a register (LOAD instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the base address.
+-- @param imm_value The immediate value for the address offset.
 function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = nil
@@ -101,6 +139,12 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
     CPU:StoreRegister(rd, value)
 end
 
+-- Stores a value from a register into memory (STORE instruction).
+-- @param CPU The CPU object.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the base address.
+-- @param rs2 The source register for the value to store.
+-- @param imm_value The immediate value for the address offset.
 function RVEMU_BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = CPU:LoadRegister(rs2)
@@ -116,6 +160,12 @@ function RVEMU_BaseInstructions_STORE(CPU, funct3, rs1, rs2, imm_value)
     end
 end
 
+-- Performs an arithmetic or logical operation with an immediate value and stores the result in a register (OP-IMM instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the first operand.
+-- @param imm_value The immediate value for the second operand.
 function RVEMU_BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
     local op1 = CPU:LoadRegister(rs1)
     local result = nil
@@ -148,6 +198,13 @@ function RVEMU_BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
     CPU:StoreRegister(rd, result)
 end
 
+-- Performs an arithmetic or logical operation between two registers and stores the result in a register (OP instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The first source register for the operation.
+-- @param rs2 The second source register for the operation.
+-- @param funct7 The function code for the operation.
 function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
     local op1 = CPU:LoadRegister(rs1)
     local op2 = CPU:LoadRegister(rs2)
@@ -255,6 +312,12 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
     CPU:StoreRegister(rd, result)
 end
 
+-- Performs a memory-related operation (MISC-MEM instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the base address.
+-- @param imm_value The immediate value for the address offset.
 function RVEMU_BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
     if funct3 == 0x0 then -- FENCE
         return nil
@@ -265,6 +328,12 @@ function RVEMU_BaseInstructions_MISC_MEM(CPU, rd, funct3, rs1, imm_value)
     end
 end
 
+-- Performs a system-related operation (SYSTEM instruction).
+-- @param CPU The CPU object.
+-- @param rd The destination register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the operation.
+-- @param imm_value The immediate value for the operation.
 function RVEMU_BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
     if funct3 == 0 then
         if imm_value == 0 then -- ECALL

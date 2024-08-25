@@ -19,6 +19,9 @@ RV32_KEYMAP = {
     N = 17
 }
 
+-- Initializes and returns a frame object for rendering and handling input.
+-- @param CPU The CPU object associated with the frame.
+-- @return A frame object with rendering and input handling capabilities.
 function RVEMU_GetFrame(CPU)
     local Frame = {}
     Frame.CPU = CPU
@@ -355,7 +358,7 @@ function RVEMU_GetFrame(CPU)
     end
 
     function FrameOnKeyDown(self, key)
-        print(string.format("key down (%s)", key))
+        -- print(string.format("key down (%s)", key))
         if RV32_KEYMAP[key] ~= nil then
             self.CPU.pressed_keys[RV32_KEYMAP[key]] = true
             self.CPU.sticky_keys[RV32_KEYMAP[key]] = true
@@ -363,7 +366,7 @@ function RVEMU_GetFrame(CPU)
     end
     
     function FrameOnKeyUp(self, key)
-        print(string.format("key up (%s)", key))
+        -- print(string.format("key up (%s)", key))
         if RV32_KEYMAP[key] ~= nil then
             self.CPU.pressed_keys[RV32_KEYMAP[key]] = false
         end
@@ -379,6 +382,13 @@ function RVEMU_GetFrame(CPU)
     Frame.precalc_localy = {}
     Frame.PartHeight = 50
 
+    -- Retrieves the pixel object at the specified coordinates.
+    -- @param x The x-coordinate of the pixel.
+    -- @param y The y-coordinate of the pixel.
+    -- @param PartN The part number of the frame.
+    -- @param localy The local y-coordinate within the part.
+    -- @param offset The offset in the framebuffer.
+    -- @return The pixel object at the specified coordinates.
     function Frame:GetPixel(x, y, PartN, localy, offset)
         --local PartN = 4 - math.floor(y / PartHeight)
         --local localy = y % PartHeight
@@ -390,6 +400,8 @@ function RVEMU_GetFrame(CPU)
         Frame.precalc_localy[i] = i % Frame.PartHeight
     end
 
+    -- Renders the frame from the given framebuffer address.
+    -- @param framebuffer_addr The address of the framebuffer to render.
     function Frame:RenderFrame(framebuffer_addr)
         for x = 0, 320-1, 4 do
             for y = 0, 200-1 do
@@ -411,6 +423,7 @@ function RVEMU_GetFrame(CPU)
         end
     end
 
+    -- Shows the frame and enables keyboard input.
     function Frame:Show()
         self.FrameBufferTestFrameParted[1]:EnableKeyboard(true)
         for i = 1, 4 do
@@ -419,6 +432,7 @@ function RVEMU_GetFrame(CPU)
         self.opened = true
     end
 
+    -- Hides the frame and disables keyboard input.
     function Frame:Hide()
         self.FrameBufferTestFrameParted[1]:EnableKeyboard(false)
         for i = 1, 4 do
@@ -427,6 +441,7 @@ function RVEMU_GetFrame(CPU)
         self.opened = false
     end
 
+    -- Toggles the visibility of the frame window.
     function Frame:ToggleWindow()
         if self.opened then
             self:Hide()

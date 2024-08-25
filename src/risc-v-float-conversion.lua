@@ -1,3 +1,6 @@
+-- Converts a floating-point number to its IEEE 754 binary representation.
+-- @param f The floating-point number to convert.
+-- @return The binary representation of the floating-point number.
 function RVEMU_float_to_bits(f)
     if f == 1/0 then
         return 0x7f800000
@@ -20,6 +23,9 @@ function RVEMU_float_to_bits(f)
     return bit.bor(bit.lshift(sign, 31), bit.lshift(exponent, 23), math.floor(mantissa))
 end
 
+-- Converts an IEEE 754 binary representation to a floating-point number.
+-- @param b The binary representation to convert.
+-- @return The floating-point number.
 function RVEMU_bits_to_float(b)
     local sign = bit.band(bit.rshift(b, 31), 0x1)
     local exponent = bit.band(bit.rshift(b, 23), 0xFF)
@@ -44,6 +50,9 @@ function RVEMU_bits_to_float(b)
     end
 end
 
+-- Converts a double-precision floating-point number to its IEEE 754 binary representation.
+-- @param d The double-precision floating-point number to convert.
+-- @return The high and low parts of the binary representation.
 function RVEMU_double_to_bits(d)
     local sign = 0
     if d < 0 then
@@ -66,6 +75,10 @@ function RVEMU_double_to_bits(d)
     return hi, lo
 end
 
+-- Converts an IEEE 754 binary representation to a double-precision floating-point number.
+-- @param hi The high part of the binary representation.
+-- @param lo The low part of the binary representation.
+-- @return The double-precision floating-point number.
 function RVEMU_bits_to_double(hi, lo)
     local sign = bit.band(bit.rshift(hi, 31), 0x1)
     local exponent = bit.band(bit.rshift(hi, 20), 0x7FF)

@@ -1,9 +1,14 @@
+-- Initializes and returns a RISC-V memory object.
+-- @return A RISC-V memory object with read and write capabilities.
 function RVEMU_GetMemory()
     local RiscVMemory = {
     }
     
     RiscVMemory.mem = {}
 
+    -- Retrieves the value stored at the specified memory address.
+    -- @param addr The memory address to retrieve the value from.
+    -- @return The value stored at the specified memory address.
     function RiscVMemory:Get(addr)
         --assert(self.mem[addr] ~= nil, string.format("addr 0x%x is not allocated", addr))
         --[[
@@ -14,6 +19,9 @@ function RVEMU_GetMemory()
         return self.mem[addr]
     end
 
+    -- Sets the value at the specified memory address.
+    -- @param addr The memory address to set the value at.
+    -- @param value The value to set at the specified memory address.
     function RiscVMemory:Set(addr, value)
         --assert(addr % 4 == 0, "addr must be aligned (set)")
         --[[
@@ -27,12 +35,19 @@ function RVEMU_GetMemory()
         self.mem[addr] = value
     end
 
+    -- Initializes a range of memory addresses with zero values.
+    -- @param addr_start The starting address of the memory range.
+    -- @param addr_end The ending address of the memory range.
     function RiscVMemory:InitMemoryRange(addr_start, addr_end)
         for i = addr_start, addr_end, 4 do
             self:Set(i, 0)
         end
     end
 
+    -- Reads a value from memory at the specified address and size.
+    -- @param addr The memory address to read from.
+    -- @param vsize The size of the value to read (1, 2, 4, 'float', or 'double').
+    -- @return The value read from memory.
     function RiscVMemory:Read(addr, vsize)
         if vsize == 4 then
             if addr % 4 == 0 then -- aligned read
@@ -69,6 +84,10 @@ function RVEMU_GetMemory()
         end     
     end
 
+    -- Writes a value to memory at the specified address and size.
+    -- @param addr The memory address to write to.
+    -- @param value The value to write to memory.
+    -- @param vsize The size of the value to write (1, 2, 4, 'float', or 'double').
     function RiscVMemory:Write(addr, value, vsize)
         local misalign = bit.band(addr, 3)
         if vsize == 4 then

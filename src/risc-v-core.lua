@@ -2,6 +2,8 @@ local GetAddOnMetadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetad
 local version = GetAddOnMetadata("RiscVEmu", "Version") or "SVN"
 local VERSION = "RiscVEmulator v" .. version .. " for World of Warcraft"
 
+-- Resumes the execution of the CPU if it is not stopped.
+-- @param CPU The CPU object to resume.
 function RVEMU_Resume(CPU)
     --print("resume", CPU.counter)
     if CPU.is_stopped ~= 1 then
@@ -10,6 +12,8 @@ function RVEMU_Resume(CPU)
     end
 end
 
+-- Initializes and returns a RISC-V core object.
+-- @return A RISC-V core object with registers, memory, and instruction handling.
 function RVEMU_GetCore()
     local RiscVCore = {
     }
@@ -42,11 +46,17 @@ function RVEMU_GetCore()
         return bit.band(bit.rshift(instr, 27), 0x1f) -- (instr >> 27) & 0b11111
     end
 
+    -- Loads the value from the specified register.
+    -- @param source The register index to load the value from.
+    -- @return The value stored in the specified register.
     function RiscVCore:LoadRegister(source)
         --assert((source >= 0) and (source <= 31), "register x".. tostring(source) .." isn't existed (load)")
         return self.registers[source]
     end
 
+    -- Stores a value into the specified register.
+    -- @param dest The register index to store the value into.
+    -- @param value The value to store in the register.
     function RiscVCore:StoreRegister(dest, value)
         if dest ~= 0 then
             --assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
@@ -54,18 +64,24 @@ function RVEMU_GetCore()
         end
     end
 
+    -- Stores a value into the program counter (PC) register.
+    -- @param value The value to store in the PC register.
     function RiscVCore:StorePC(value)
         --assert(value % 4 == 0, "pc must be aligned")
         self.jumped = true
         self.registers.pc = bit.band(value, 0xffffffff)
     end
 
+    -- Sets the memory for the CPU with the given memory map.
+    -- @param CPU The CPU object to set the memory for.
+    -- @param mem The memory map to set.
     function RiscVCore:SetMemory(CPU, mem)
         for k, v in pairs(mem) do
             CPU.memory:Set(k, v)
         end
     end
 
+    -- Initializes the Control and Status Registers (CSRs) for the CPU.
     function RiscVCore:InitCSR()
         self.csr = {}
 
@@ -142,6 +158,8 @@ function RVEMU_GetCore()
         end
     end
 
+    -- Initializes the CPU with registers, memory, and instruction handlers.
+    -- @param init_handler The initialization handler function for the CPU.
     function RiscVCore:InitCPU(init_handler)
         self.registers = {}
         self.fregisters = {}
@@ -295,6 +313,7 @@ function RVEMU_GetCore()
 
     end
 
+    -- Executes a single instruction step in the CPU.
     function RiscVCore:Step()
         local instruction = self.memory:Get(self.registers.pc)
         local instr_cache = self.instr_cache
@@ -392,6 +411,7 @@ function RVEMU_GetCore()
         end
     end
 
+    -- Checks if the CPU should yield execution and schedules a resume if needed.
     function RiscVCore:MaybeYieldCPU()
         local now = time()
         if now - self.last_sleep > 2 then
@@ -400,6 +420,7 @@ function RVEMU_GetCore()
         end
     end
 
+    -- Prints the values of all CPU registers to the console.
     function RiscVCore:PrintRegs()
         for i = 0, 31 do
             print(string.format("x%d = 0x%x", i, self.registers[i]))
@@ -407,12 +428,14 @@ function RVEMU_GetCore()
         print(string.format("pc = 0x%x", self.registers.pc))
     end
 
+    -- Stops the execution of the CPU and hides the frame.
     function RiscVCore:Stop()
         self.frame:Hide()
         self.is_stopped = 1
         self.is_running = 0
     end
 
+    -- Runs the CPU, executing instructions until stopped.
     function RiscVCore:Run()
         self.last_sleep = time()
         while self.is_running == 1 do

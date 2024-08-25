@@ -7,6 +7,12 @@ local function get_sign(x)
     return x >= 0 and 1 or -1
 end
 
+-- Loads a floating-point value from memory into a floating-point register.
+-- @param CPU The CPU object.
+-- @param rd The destination floating-point register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the address.
+-- @param imm_value The immediate value for the address offset.
 function RVEMU_FPU_Load(CPU, rd, funct3, rs1, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = nil
@@ -24,6 +30,12 @@ function RVEMU_FPU_Load(CPU, rd, funct3, rs1, imm_value)
     CPU.fregisters[rd].value = value
 end
 
+-- Stores a floating-point value from a floating-point register into memory.
+-- @param CPU The CPU object.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The source register for the address.
+-- @param rs2 The source floating-point register for the value.
+-- @param imm_value The immediate value for the address offset.
 function RVEMU_FPU_Store(CPU, funct3, rs1, rs2, imm_value)
     local addr = CPU:LoadRegister(rs1) + imm_value
     local value = CPU.fregisters[rs2].value
@@ -39,6 +51,14 @@ function RVEMU_FPU_Store(CPU, funct3, rs1, rs2, imm_value)
     end
 end
 
+-- Performs a fused multiply-add operation on floating-point registers.
+-- @param CPU The CPU object.
+-- @param rd The destination floating-point register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The first source floating-point register.
+-- @param rs2 The second source floating-point register.
+-- @param funct2 The function code for the operation.
+-- @param rs3 The third source floating-point register.
 function RVEMU_FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
@@ -47,6 +67,14 @@ function RVEMU_FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
+-- Performs a fused multiply-subtract operation on floating-point registers.
+-- @param CPU The CPU object.
+-- @param rd The destination floating-point register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The first source floating-point register.
+-- @param rs2 The second source floating-point register.
+-- @param funct2 The function code for the operation.
+-- @param rs3 The third source floating-point register.
 function RVEMU_FPU_FMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
@@ -55,6 +83,14 @@ function RVEMU_FPU_FMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
+-- Performs a fused negative multiply-subtract operation on floating-point registers.
+-- @param CPU The CPU object.
+-- @param rd The destination floating-point register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The first source floating-point register.
+-- @param rs2 The second source floating-point register.
+-- @param funct2 The function code for the operation.
+-- @param rs3 The third source floating-point register.
 function RVEMU_FPU_FNMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
@@ -63,6 +99,14 @@ function RVEMU_FPU_FNMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
+-- Performs a fused negative multiply-add operation on floating-point registers.
+-- @param CPU The CPU object.
+-- @param rd The destination floating-point register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The first source floating-point register.
+-- @param rs2 The second source floating-point register.
+-- @param funct2 The function code for the operation.
+-- @param rs3 The third source floating-point register.
 function RVEMU_FPU_FNMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
@@ -71,6 +115,13 @@ function RVEMU_FPU_FNMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
     CPU.fregisters[rd].value = result
 end
 
+-- Performs a floating-point operation on floating-point registers.
+-- @param CPU The CPU object.
+-- @param rd The destination floating-point register.
+-- @param funct3 The function code for the operation.
+-- @param rs1 The first source floating-point register.
+-- @param rs2 The second source floating-point register.
+-- @param funct7 The function code for the operation.
 function RVEMU_FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
     local op1 = CPU.fregisters[rs1].value
     local op2 = CPU.fregisters[rs2].value
