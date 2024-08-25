@@ -2,9 +2,9 @@
 
 This is a World of Warcraft addon library that provides a RISC-V emulator implementing the RV32IMFD instruction set. This project allows you to run RISC-V programs within the World of Warcraft environment.
 
+Emulator is developed together with the Doom port it was made for. See [tna0y/wow-doom-within](https://github.com/tna0y/wow-doom-within) for more details.
+
 ## Building and running
-
-
 
 See the **tests/Makefile** and **tests/testsuite.lua** for guidance on how to compile and run different examples.
 
