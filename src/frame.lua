@@ -446,7 +446,7 @@ function RVEMU_GetFrame(CPU)
         if self.opened then
             self:Hide()
         else
-            self:Close()
+            self:Show()
         end
     end
 
