@@ -9,7 +9,7 @@ function Resume(CPU)
 end
 
 function GetCore()
-    RiscVCore = {
+    local RiscVCore = {
         VERSION = "RiscVEmulator v" .. version .. " for World of Warcraft"
     }
 

@@ -1,5 +1,5 @@
 function GetMemory()
-    RiscVMemory = {
+    local RiscVMemory = {
     }
     
     RiscVMemory.mem = {}
