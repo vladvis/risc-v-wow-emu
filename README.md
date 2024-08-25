@@ -1,6 +1,6 @@
 # RISC-V Linux userspace emulator for World of Warcraft
 
-RiscVEmulator is a World of Warcraft addon library that provides a RISC-V emulator implementing the RV32IMFD instruction set. This project allows you to run RISC-V programs within the World of Warcraft environment.
+This is a World of Warcraft addon library that provides a RISC-V emulator implementing the RV32IMFD instruction set. This project allows you to run RISC-V programs within the World of Warcraft environment.
 
 ## Building and running
 
@@ -31,6 +31,8 @@ See `deploy.bat` to install the engine into your game as an addon on a Windows P
 - **src/risc-v-float-conversion.lua**: Conversion functions for floating-point and double-precision numbers.
 - **src/frame.lua**: Frame rendering and input handling.
 - **src/risc-v-syscall.lua**: System call implementations.
+
+- **tools/elf2lua.py**: Script for converting ELF binaries into Lua files capable of initializing the risc-v-wow-emu CPU.
 
 ## Contributing
 
