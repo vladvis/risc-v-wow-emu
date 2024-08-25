@@ -34,7 +34,7 @@ function bits_to_float(b)
         end
     elseif exponent == 255 then
         if mantissa == 0 then
-            return (sign == 1) and -math.huge or math.huge
+            return (sign == 1) and -1/0 or 1/0
         else
             return 0/0
         end

@@ -1,5 +1,5 @@
 function RunTests()
-    tests = 
+    local tests = 
     {
         --[[fib = { 
             init = Init_fib, 

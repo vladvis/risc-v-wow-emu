@@ -268,7 +268,7 @@ end
 function BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
     if funct3 == 0 then
         if imm_value == 0 then -- ECALL
-            syscall_num = CPU:LoadRegister(17)
+            local syscall_num = CPU:LoadRegister(17)
             handle_syscall(CPU, syscall_num)
         elseif imm_value == 1 then -- EBREAK
             print("EBREAK encountered at PC: " .. tostring(CPU.registers.pc))

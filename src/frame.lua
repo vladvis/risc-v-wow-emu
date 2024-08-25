@@ -314,7 +314,7 @@ function GetFrame(CPU)
         Frame.vga_to_rgb[i] = { colors[i+1][1]/255, colors[i+1][2]/255, colors[i+1][3]/255 }
     end
 
-    FrameBufferTestMixin = {}
+    local FrameBufferTestMixin = {}
 
     function FrameBufferTestMixin:OnLoad()
         self.ScreenWidth = 320
