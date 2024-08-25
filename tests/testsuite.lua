@@ -69,9 +69,10 @@ function RunTests()
 
     for name, test in pairs(tests) do
         print(string.format("Starting test %s...", name))
-        RiscVCore:InitCPU(test.init)
-        RiscVCore:Run()
-        local result = test.verify(RiscVCore)
+        CPU = GetCore()
+        CPU:InitCPU(test.init)
+        CPU:Run()
+        local result = test.verify(CPU)
         print(string.format("Test %s result = %s", name, tostring(result)))
     end
 end

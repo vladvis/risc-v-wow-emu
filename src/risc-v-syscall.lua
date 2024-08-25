@@ -21,18 +21,18 @@ function handle_syscall(CPU, syscall_num)
         CPU:StoreRegister(10, count)
     elseif syscall_num == 101 then -- togglewindow
         print("togglewindow was called")
-        ToggleWindow()
+        CPU.frame:ToggleWindow()
     elseif syscall_num == 102 then -- render_framebuffer
         local t = GetTime()
         local delta = t - CPU.last_frame
         local total_delta = t - CPU.start_time
         print(string.format("render_framebuffer was called (id %d ; frame %fs ; total %fs)", CPU.frame_cnt, delta, total_delta))
         local framebuffer_addr = CPU:LoadRegister(10)
-        RenderFrame(CPU, framebuffer_addr)
+        CPU.frame:RenderFrame(framebuffer_addr)
         CPU.is_running = 0
         CPU.last_frame = t
         CPU.frame_cnt = CPU.frame_cnt + 1
-        C_Timer.After(0.01, Resume)
+        C_Timer.After(0.01, function() Resume(CPU) end)
     elseif syscall_num == 103 then -- get_key_state
         -- print("get_key_state was called")
         local key = CPU:LoadRegister(10)
@@ -45,7 +45,7 @@ function handle_syscall(CPU, syscall_num)
     elseif syscall_num == 104 then -- sleep
         local msec = CPU:LoadRegister(10)
         CPU.is_running = 0
-        C_Timer.After(msec / 1000, Resume)
+        C_Timer.After(msec / 1000, function() Resume(CPU) end)
     elseif syscall_num == 105 then -- draw_column
         -- void DG_DrawColumn(uint8_t* dest, uint8_t* dc_colormap, uint8_t* dc_source, int frac, int frac_step, int count) {
         local dest = CPU:LoadRegister(10)
