@@ -9,7 +9,7 @@ As we emulate the Linux and the game runs on Windows and MacOS, Windows + WSL is
 [risc-v-gnu-toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) is required to build the tests.
 ```sh
 git clone git@github.com:riscv-collab/riscv-gnu-toolchain.git
-cdriscv-gnu-toolchain
+cd riscv-gnu-toolchain
 ./configure --prefix=/opt/toolchains/riscv32 --with-arch=rv32g --with-abi=ilp32d
 make
 ```
