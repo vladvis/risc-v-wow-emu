@@ -4,7 +4,16 @@ This is a World of Warcraft addon library that provides a RISC-V emulator implem
 
 ## Building and running
 
-As we emulate the Linux and the game runs on Windows and MacOS, Windows + WSL is the best development environment for the project.
+
+
+See the **tests/Makefile** and **tests/testsuite.lua** for guidance on how to compile and run different examples.
+
+See `deploy.bat` to install the engine into your game as an addon on a Windows PC. Samples selected in **tests/testsuite.lua** will run as soon as the addon is loaded. 
+
+### Compiling tests
+| As we supply the compiled tests in **tests/lua_bin** directory it is not required to have a full development environment. Simply run the **deploy.bat** script to install it in your game. Make sure to set up the path in **deploy.conf** file.
+
+We emulate the Linux and the game runs on Windows and MacOS so Windows + WSL is the best development environment for the project.
 
 [risc-v-gnu-toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) is required to build the tests.
 ```sh
@@ -18,10 +27,6 @@ python with jinja2 and elftools is required to convert elf binaries to lua code 
 ```sh
 python3 -m pip install jinja2 pyelftools
 ```
-
-See the **tests/Makefile** and **tests/testsuite.lua** for guidance on how to compile and run different examples.
-
-See `deploy.bat` to install the engine into your game as an addon on a Windows PC. Samples selected in **tests/testsuite.lua** will run as soon as the addon is loaded. 
 
 ## Key Components
 
