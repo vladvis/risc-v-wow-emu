@@ -36,7 +36,8 @@ function handle_syscall(CPU, syscall_num)
     elseif syscall_num == 103 then -- get_key_state
         -- print("get_key_state was called")
         local key = CPU:LoadRegister(10)
-        if CPU.pressed_keys[key] then
+        if CPU.pressed_keys[key] or CPU.sticky_keys[key] then
+            CPU.sticky_keys[key] = false
             CPU:StoreRegister(10, 1)
         else
             CPU:StoreRegister(10, 0)
@@ -74,7 +75,41 @@ function handle_syscall(CPU, syscall_num)
         local step = CPU:LoadRegister(14)
         local count = CPU:LoadRegister(15)
 
-        for i=count,0,-1 do
+        local misalign = dest % 4
+        local steps_before = math.min((-dest) % 4, count)
+        
+        for i = 1, steps_before do
+            local ytemp = bit.band(bit.rshift(position, 4), 0x0fc0)
+            local xtemp = bit.rshift(position, 26)
+            local spot = bit.bor(xtemp, ytemp)
+
+            local source_val = CPU.memory:Read(ds_source + spot, 1)
+            local val = CPU.memory:Read(ds_colormap + source_val, 1)
+            CPU.memory:Write(dest, val, 1)
+
+            dest = dest + 1
+            position = position + step
+        end
+        count = count - steps_before
+
+        for i = 1, count-4, 4 do
+            local val = 0
+            for j = 0, 3 do
+                local ytemp = bit.band(bit.rshift(position, 4), 0x0fc0)
+                local xtemp = bit.rshift(position, 26)
+                local spot = bit.bor(xtemp, ytemp)
+
+                local source_val = CPU.memory:Read(ds_source + spot, 1)
+                val = bit.bor(val, bit.lshift(CPU.memory:Read(ds_colormap + source_val, 1), j*8))
+                position = position + step
+            end
+            CPU.memory:Write(dest, val, 4)
+
+            dest = dest + 4
+        end
+        local steps_after = count % 4 + 1
+
+        for i = 1, steps_after do
             local ytemp = bit.band(bit.rshift(position, 4), 0x0fc0)
             local xtemp = bit.rshift(position, 26)
             local spot = bit.bor(xtemp, ytemp)

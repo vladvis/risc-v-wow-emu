@@ -350,6 +350,7 @@ function FrameOnKeyDown(event, key)
     print(string.format("key down (%s)", key))
     if RV32_KEYMAP[key] ~= nil then
         RiscVCore.pressed_keys[RV32_KEYMAP[key]] = true
+        RiscVCore.sticky_keys[RV32_KEYMAP[key]] = true
     end
 end
 
