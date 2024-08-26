@@ -403,10 +403,11 @@ function RVEMU_GetFrame(CPU)
     -- Renders the frame from the given framebuffer address.
     -- @param framebuffer_addr The address of the framebuffer to render.
     function Frame:RenderFrame(framebuffer_addr)
+        local read4 = self.CPU.memory:Read(4)
         for x = 0, 320-1, 4 do
             for y = 0, 200-1 do
                 local offset = y * 320 + x
-                local data = self.CPU.memory:Read(framebuffer_addr + offset, 4)
+                local data = read4(framebuffer_addr + offset)
 
                 for i=0,3 do
                     local data_loc = bit.band(data, 0xff)
@@ -418,7 +419,6 @@ function RVEMU_GetFrame(CPU)
                     end
                     data = bit.rshift(data, 8)
                 end
-
             end
         end
     end
