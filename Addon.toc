@@ -1,4 +1,3 @@
-test_frame.lua
 risc-v-syscall.lua
 rv32i-base-instructions.lua
 risc-v-float-conversion.lua
