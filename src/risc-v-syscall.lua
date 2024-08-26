@@ -32,7 +32,8 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         CPU.is_running = 0
         CPU.last_frame = t
         CPU.frame_cnt = CPU.frame_cnt + 1
-        C_Timer.After(0.01, function() RVEMU_Resume(CPU) end)
+        -- C_Timer.After(0.01, function() RVEMU_Resume(CPU) end)
+        RunNextFrame(function() RVEMU_Resume(CPU) end)
     elseif syscall_num == 103 then -- get_key_state
         -- print("get_key_state was called")
         local key = CPU:LoadRegister(10)

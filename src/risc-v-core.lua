@@ -66,11 +66,11 @@ function RVEMU_GetCore()
 
     -- Stores a value into the program counter (PC) register.
     -- @param value The value to store in the PC register.
-    function RiscVCore:StorePC(value)
+    --[[function RiscVCore:StorePC(value)
         --assert(value % 4 == 0, "pc must be aligned")
         self.jumped = true
         self.registers.pc = bit.band(value, 0xffffffff)
-    end
+    end]]
 
     -- Sets the memory for the CPU with the given memory map.
     -- @param CPU The CPU object to set the memory for.
@@ -292,6 +292,7 @@ function RVEMU_GetCore()
         self:InitCSR()
         self.memory = RVEMU_GetMemory()
         self.instr_cache = {}
+        self.addr_cache = {}
 
         self.pressed_keys = {}
         self.sticky_keys = {}
@@ -313,102 +314,106 @@ function RVEMU_GetCore()
 
     end
 
-    -- Executes a single instruction step in the CPU.
-    function RiscVCore:Step()
-        local instruction = self.memory:Get(self.registers.pc)
-        local instr_cache = self.instr_cache
-        local opcodes = self.opcodes
-        local registers = self.registers
+    function RiscVCore:DecodeInstruction(instruction)
         local bit_band = bit.band
         local bit_rshift = bit.rshift
         local bit_bor = bit.bor
+        
+        local opcodes = self.opcodes
+        local opcode = bit_band(instruction, 0x7f)
+        local opcode_info = opcodes[opcode]
+        local instr_type = opcode_info.type
+        local handler = opcode_info.handler
+        local result = nil
+        
+        if instr_type == "U" then
+            local rd = decode_rd(instruction)
+            local imm_value = bit_band(instruction, 0xfffff000)
+            result = { rd, imm_value }
 
-        if instr_cache[instruction] then
-            local cached = instr_cache[instruction]
-            opcodes[cached.opcode].handler(self, unpack(cached.args))
-        else
-            local opcode = bit_band(instruction, 0x7f)
-            local opcode_info = opcodes[opcode]
-            local instr_type = opcode_info.type
-            local handler = opcode_info.handler
+        elseif instr_type == "J" then
+            local rd = decode_rd(instruction)
+            local imm_value = bit_band(bit_rshift(instruction, 20), 0x7fe)
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 9), 0x800))
+            imm_value = bit_bor(imm_value, bit_band(instruction, 0xff000))
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 11), 0x100000))
+            imm_value = RVEMU_set_sign(imm_value, 21)
+            result = { rd, imm_value }
 
-            if instr_type == "U" then
-                local rd = decode_rd(instruction)
-                local imm_value = bit_band(instruction, 0xfffff000)
-                instr_cache[instruction] = { opcode = opcode, args = { rd, imm_value } }
-                handler(self, rd, imm_value)
+        elseif instr_type == "I" then
+            local rd = decode_rd(instruction)
+            local funct3 = decode_funct3(instruction)
+            local rs1 = decode_rs1(instruction)
+            local imm_value = bit_band(bit_rshift(instruction, 20), 0xfff)
+            imm_value = RVEMU_set_sign(imm_value, 12)
+            result = { rd, funct3, rs1, imm_value }
 
-            elseif instr_type == "J" then
-                local rd = decode_rd(instruction)
-                local imm_value = bit_band(bit_rshift(instruction, 20), 0x7fe)
-                imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 9), 0x800))
-                imm_value = bit_bor(imm_value, bit_band(instruction, 0xff000))
-                imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 11), 0x100000))
-                imm_value = RVEMU_set_sign(imm_value, 21)
-                instr_cache[instruction] = { opcode = opcode, args = { rd, imm_value } }
-                handler(self, rd, imm_value)
+        elseif instr_type == "B" then
+            local funct3 = decode_funct3(instruction)
+            local rs1 = decode_rs1(instruction)
+            local rs2 = decode_rs2(instruction)
+            local imm_value = bit_band(bit_rshift(instruction, 7), 0x1e)
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 20), 0x7e0))
+            imm_value = bit_bor(imm_value, bit_band(bit.lshift(instruction, 4), 0x800))
+            imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 19), 0x1000))
+            imm_value = RVEMU_set_sign(imm_value, 13)
+            result = { funct3, rs1, rs2, imm_value }
 
-            elseif instr_type == "I" then
-                local rd = decode_rd(instruction)
-                local funct3 = decode_funct3(instruction)
-                local rs1 = decode_rs1(instruction)
-                local imm_value = bit_band(bit_rshift(instruction, 20), 0xfff)
-                imm_value = RVEMU_set_sign(imm_value, 12)
-                instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, imm_value } }
-                handler(self, rd, funct3, rs1, imm_value)
+        elseif instr_type == "S" then
+            local funct3 = decode_funct3(instruction)
+            local rs1 = decode_rs1(instruction)
+            local rs2 = decode_rs2(instruction)
+            local imm_value = bit_bor(bit.lshift(bit_rshift(instruction, 25), 5), decode_rd(instruction))
+            imm_value = RVEMU_set_sign(imm_value, 12)
+            result = { funct3, rs1, rs2, imm_value }
 
-            elseif instr_type == "B" then
-                local funct3 = decode_funct3(instruction)
-                local rs1 = decode_rs1(instruction)
-                local rs2 = decode_rs2(instruction)
-                local imm_value = bit_band(bit_rshift(instruction, 7), 0x1e)
-                imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 20), 0x7e0))
-                imm_value = bit_bor(imm_value, bit_band(bit.lshift(instruction, 4), 0x800))
-                imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 19), 0x1000))
-                imm_value = RVEMU_set_sign(imm_value, 13)
-                instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
-                handler(self, funct3, rs1, rs2, imm_value)
+        elseif instr_type == "R" then
+            local rd = decode_rd(instruction)
+            local funct3 = decode_funct3(instruction)
+            local rs1 = decode_rs1(instruction)
+            local rs2 = decode_rs2(instruction)
+            local funct7 = bit_rshift(instruction, 25)
+            result = { rd, funct3, rs1, rs2, funct7 }
 
-            elseif instr_type == "S" then
-                local funct3 = decode_funct3(instruction)
-                local rs1 = decode_rs1(instruction)
-                local rs2 = decode_rs2(instruction)
-                local imm_value = bit_bor(bit.lshift(bit_rshift(instruction, 25), 5), decode_rd(instruction))
-                imm_value = RVEMU_set_sign(imm_value, 12)
-                instr_cache[instruction] = { opcode = opcode, args = { funct3, rs1, rs2, imm_value } }
-                handler(self, funct3, rs1, rs2, imm_value)
-
-            elseif instr_type == "R" then
-                local rd = decode_rd(instruction)
-                local funct3 = decode_funct3(instruction)
-                local rs1 = decode_rs1(instruction)
-                local rs2 = decode_rs2(instruction)
-                local funct7 = bit_rshift(instruction, 25)
-                instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, rs2, funct7 } }
-                handler(self, rd, funct3, rs1, rs2, funct7)
-
-            elseif instr_type == "R4" then
-                local rd = decode_rd(instruction)
-                local funct3 = decode_funct3(instruction)
-                local rs1 = decode_rs1(instruction)
-                local rs2 = decode_rs2(instruction)
-                local funct2 = bit_rshift(instruction, 25)
-                local rs3 = decode_rs3(instruction)
-                instr_cache[instruction] = { opcode = opcode, args = { rd, funct3, rs1, rs2, funct2, rs3 } }
-                handler(self, rd, funct3, rs1, rs2, funct2, rs3)
-            end
+        elseif instr_type == "R4" then
+            local rd = decode_rd(instruction)
+            local funct3 = decode_funct3(instruction)
+            local rs1 = decode_rs1(instruction)
+            local rs2 = decode_rs2(instruction)
+            local funct2 = bit_rshift(instruction, 25)
+            local rs3 = decode_rs3(instruction)
+            result = { rd, funct3, rs1, rs2, funct2, rs3 }
         end
+        return opcodes[opcode].handler(self, unpack(result))
+    end
 
-        if self.jumped then
-            self.jumped = false
-        else
-            registers.pc = registers.pc + 4
-        end
-
-        self.counter = self.counter + 1
-        if self.counter % 100000 == 0 then
+    -- Executes a single instruction step in the CPU.
+    function RiscVCore:Step()
+        local counter = self.counter
+        self.counter = counter - 1
+        if counter == 0 then
+            counter = 1000000
             self:MaybeYieldCPU()
         end
+
+        local registers = self.registers
+        local pc = registers.pc
+        local addr_cache = self.addr_cache
+
+        local decoded_instr = addr_cache[pc]
+        if decoded_instr == nil then
+            local instruction = self.memory:Get(pc)
+            local instr_cache = self.instr_cache
+
+            decoded_instr = instr_cache[instruction]
+            if decoded_instr == nil then
+                decoded_instr = self:DecodeInstruction(instruction)
+                instr_cache[instruction] = decoded_instr
+            end
+            addr_cache[pc] = decoded_instr
+        end
+
+        decoded_instr()
     end
 
     -- Checks if the CPU should yield execution and schedules a resume if needed.
@@ -416,7 +421,8 @@ function RVEMU_GetCore()
         local now = time()
         if now - self.last_sleep > 2 then
             self.is_running = 0
-            C_Timer.After(0.01, function() RVEMU_Resume(self) end)
+            --C_Timer.After(0.01, function() RVEMU_Resume(self) end)
+            RunNextFrame(function() RVEMU_Resume(self) end)
         end
     end
 
