@@ -20,6 +20,8 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             --assert(false, "Unsupported fd")
         end
         CPU:StoreRegister(10, count)
+        CPU.is_running = 0
+        RunNextFrame(function() RVEMU_Resume(CPU) end)
     elseif syscall_num == 101 then -- togglewindow
         print("togglewindow was called")
         CPU.frame:ToggleWindow()
