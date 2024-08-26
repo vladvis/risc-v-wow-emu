@@ -15,22 +15,25 @@ end
 -- @param imm_value The immediate value for the address offset.
 function RVEMU_FPU_Load(CPU, rd, funct3, rs1, imm_value)
     local registers = CPU.registers
+    local CPU_memory_Read_float = CPU.memory:Read('float')
+    local CPU_memory_Read_double = CPU.memory:Read('double')
+    
     return function()
-        local addr = CPU:LoadRegister(rs1) + imm_value
+        local addr = registers[rs1] + imm_value
         local value = nil
 
         if funct3 == 0x2 then
             -- FLW: Load 32-bit float
-            value = CPU.memory:Read(addr, 'float')
+            value = CPU_memory_Read_float(addr)
         elseif funct3 == 0x3 then
             -- FLD: Load 64-bit double
-            value = CPU.memory:Read(addr, 'double')
+            value = CPU_memory_Read_double(addr)
         else
             --assert(false, "Unsupported FPU load funct3: " .. tostring(funct3))
         end
 
         CPU.fregisters[rd].value = value
-        registers.pc = registers.pc + 4
+        registers[33] = registers[33] + 4
     end
 end
 
@@ -42,21 +45,24 @@ end
 -- @param imm_value The immediate value for the address offset.
 function RVEMU_FPU_Store(CPU, funct3, rs1, rs2, imm_value)
     local registers = CPU.registers
+    local CPU_memory_Write_float = CPU.memory:Write('float')
+    local CPU_memory_Write_double = CPU.memory:Write('double')
+    
     return function()
 
-        local addr = CPU:LoadRegister(rs1) + imm_value
+        local addr = registers[rs1] + imm_value
         local value = CPU.fregisters[rs2].value
 
         if funct3 == 0x2 then
             -- FSW: Store 32-bit float
-            CPU.memory:Write(addr, value, 'float')
+            CPU_memory_Write_float(addr, value)
         elseif funct3 == 0x3 then
             -- FSD: Store 64-bit double
-            CPU.memory:Write(addr, value, 'double')
+            CPU_memory_Write_double(addr, value)
         else
             --assert(false, "Unsupported FPU store funct3: " .. tostring(funct3))
         end
-        registers.pc = registers.pc + 4
+        registers[33] = registers[33] + 4
     end
 end
 
@@ -77,7 +83,7 @@ function RVEMU_FPU_FMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
         local op3 = CPU.fregisters[rs3].value
         local result = (op1 * op2) + op3
         CPU.fregisters[rd].value = result
-        registers.pc = registers.pc + 4
+        registers[33] = registers[33] + 4
     end
 end
 
@@ -97,7 +103,7 @@ function RVEMU_FPU_FMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
         local op3 = CPU.fregisters[rs3].value
         local result = (op1 * op2) - op3
         CPU.fregisters[rd].value = result
-        registers.pc = registers.pc + 4
+        registers[33] = registers[33] + 4
     end
 end
 
@@ -117,7 +123,7 @@ function RVEMU_FPU_FNMSUB(CPU, rd, funct3, rs1, rs2, funct2, rs3)
         local op3 = CPU.fregisters[rs3].value
         local result = -(op1 * op2) + op3
         CPU.fregisters[rd].value = result
-        registers.pc = registers.pc + 4
+        registers[33] = registers[33] + 4
     end
 end
 
@@ -137,7 +143,7 @@ function RVEMU_FPU_FNMADD(CPU, rd, funct3, rs1, rs2, funct2, rs3)
         local op3 = CPU.fregisters[rs3].value
         local result = -(op1 * op2) - op3
         CPU.fregisters[rd].value = result
-        registers.pc = registers.pc + 4
+        registers[33] = registers[33] + 4
     end
 end
 
@@ -235,9 +241,9 @@ function RVEMU_FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
             end
         elseif funct6 == 0x34 then -- (ATTENTION: rs1 is integer)
             if rs2 == 0x00 then -- FCVT.S.W | FCVT.D.W
-                result = RVEMU_set_sign_32(CPU:LoadRegister(rs1))
+                result = RVEMU_set_sign_32(registers[rs1])
             elseif rs2 == 0x01 then -- FCVT.S.WU | FCVT.D.WU
-                result = CPU:LoadRegister(rs1)
+                result = registers[rs1]
             else
                 --assert(false, "invalid rs2 value: " .. tostring(rs2))
             end
@@ -266,16 +272,16 @@ function RVEMU_FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
                 --assert(false, "Unsupported FP operation funct3: " .. tostring(funct3))
             end
         elseif funct6 == 0x3c then -- FMV.W.X (ATTENTION: rs1 is integer)
-            result = RVEMU_bits_to_float(CPU:LoadRegister(rs1))
+            result = RVEMU_bits_to_float(registers[rs1])
         else
             --assert(false, "Unsupported FP operation funct7: " .. tostring(funct7) .. " " .. tostring(funct6))
         end
 
         if funct6 == 0x38 or funct6 == 0x30 or funct6 == 0x28 then
-            CPU:StoreRegister(rd, result)
+            CPU.registers[rd] = result
         else
             CPU.fregisters[rd].value = result
         end
-        registers.pc = registers.pc + 4
+        registers[33] = registers[33] + 4
     end
 end

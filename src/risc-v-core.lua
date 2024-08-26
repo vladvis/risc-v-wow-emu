@@ -69,7 +69,7 @@ function RVEMU_GetCore()
     --[[function RiscVCore:StorePC(value)
         --assert(value % 4 == 0, "pc must be aligned")
         self.jumped = true
-        self.registers.pc = bit.band(value, 0xffffffff)
+        self.registers[33] = bit.band(value, 0xffffffff)
     end]]
 
     -- Sets the memory for the CPU with the given memory map.
@@ -161,7 +161,13 @@ function RVEMU_GetCore()
     -- Initializes the CPU with registers, memory, and instruction handlers.
     -- @param init_handler The initialization handler function for the CPU.
     function RiscVCore:InitCPU(init_handler)
-        self.registers = {}
+        self.registers = {
+            0,0,0,0,0,0,0,0, -- x0..
+            0,0,0,0,0,0,0,0, -- .
+            0,0,0,0,0,0,0,0, -- .
+            0,0,0,0,0,0,0,0, -- ..x31
+            0 -- pc
+        }
         self.fregisters = {}
         for i=0,31 do
             self.registers[i] = 0
@@ -175,7 +181,6 @@ function RVEMU_GetCore()
             uf = false, -- underflow
             nx = false -- inexact
         }
-        self.registers["pc"] = 0
 
         self.opcodes = {}
 
@@ -301,12 +306,13 @@ function RVEMU_GetCore()
 
         init_handler(self)
 
-        self.registers.pc = self.entrypoint
+        self.registers[33] = self.entrypoint
 
         self.jumped = false
         self.is_running = 1
         self.is_stopped = 0
         self.counter = 0
+        self.time_sum = 0
         
         self.last_frame = GetTime()
         self.start_time = GetTime()
@@ -397,7 +403,7 @@ function RVEMU_GetCore()
         end
 
         local registers = self.registers
-        local pc = registers.pc
+        local pc = registers[33]
         local addr_cache = self.addr_cache
 
         local decoded_instr = addr_cache[pc]
@@ -431,7 +437,7 @@ function RVEMU_GetCore()
         for i = 0, 31 do
             print(string.format("x%d = 0x%x", i, self.registers[i]))
         end
-        print(string.format("pc = 0x%x", self.registers.pc))
+        print(string.format("pc = 0x%x", self.registers[33]))
     end
 
     -- Stops the execution of the CPU and hides the frame.
