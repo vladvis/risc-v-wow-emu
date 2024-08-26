@@ -112,7 +112,7 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             CPU:StoreRegister(10, addr)
             CPU.heap_start = addr
         end
-]
+
     else
         --assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
     end
