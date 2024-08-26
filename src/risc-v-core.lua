@@ -314,8 +314,7 @@ function RVEMU_GetCore()
         self.counter = 0
         self.time_sum = 0
         
-        self.last_frame = GetTime()
-        self.start_time = GetTime()
+        self.frame_start_time = GetTime()
         self.frame_cnt = 0
 
     end

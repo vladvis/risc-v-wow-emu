@@ -26,16 +26,19 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         print("togglewindow was called")
         CPU.frame:ToggleWindow()
     elseif syscall_num == 102 then -- render_framebuffer
-        local t = GetTime()
-        local delta = t - CPU.last_frame
-        local total_delta = t - CPU.start_time
-        print(string.format("render_framebuffer was called (id %d ; frame %fs ; total %fs)", CPU.frame_cnt, delta, total_delta))
+
         local framebuffer_addr = registers[10]
         CPU.frame:RenderFrame(framebuffer_addr)
-        CPU.is_running = 0
-        CPU.last_frame = t
+        
         CPU.frame_cnt = CPU.frame_cnt + 1
-        -- C_Timer.After(0.01, function() RVEMU_Resume(CPU) end)
+        if CPU.frame_cnt >= 50 then
+            local t = GetTime()
+            print(string.format("Rendered 50 frames. Average FPS: %f", CPU.frame_cnt/(t - CPU.frame_start_time) ))
+            CPU.frame_cnt = 0
+            CPU.frame_start_time = t
+        end
+
+        CPU.is_running = 0
         RunNextFrame(function() RVEMU_Resume(CPU) end)
     elseif syscall_num == 103 then -- get_key_state
         -- print("get_key_state was called")
@@ -112,7 +115,16 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             CPU:StoreRegister(10, addr)
             CPU.heap_start = addr
         end
+    elseif syscall_num == 403 then -- clock_gettime
+        local clock_id = registers[10]
+        local struct_addr = registers[11]
+        -- print("clock_gettime", clock_id)
+        local dtime = debugprofilestop()
+        local seconds = math.floor(dtime / 1000)
+        local nanoseconds = math.floor((dtime % seconds) * 1000000)
 
+        CPU.memory:Write(4)(struct_addr, seconds)
+        CPU.memory:Write(4)(struct_addr + 8, bit.band(nanoseconds, 0xffffffff))
     else
         --assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
     end
