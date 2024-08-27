@@ -187,109 +187,127 @@ function RVEMU_GetCore()
         self.opcodes[bin("0110111")] = {
             name = "LUI",
             type = "U",
-            handler = RVEMU_BaseInstructions_LUI
+            handler = RVEMU_BaseInstructions_LUI,
+            can_branch = false
         }
 
         self.opcodes[bin("0010111")] = {
             name = "AUIPC",
             type = "U",
-            handler = RVEMU_BaseInstructions_AUIPC
+            handler = RVEMU_BaseInstructions_AUIPC,
+            can_branch = false
         }
 
         self.opcodes[bin("1101111")] = {
             name = "JAL",
             type = "J",
-            handler = RVEMU_BaseInstructions_JAL
+            handler = RVEMU_BaseInstructions_JAL,
+            can_branch = false
         }
 
         self.opcodes[bin("1100111")] = {
             name = "JALR",
             type = "I",
-            handler = RVEMU_BaseInstructions_JALR
+            handler = RVEMU_BaseInstructions_JALR,
+            can_branch = true
         }
 
         self.opcodes[bin("1100011")] = {
             name = "BRANCH",
             type = "B",
-            handler = RVEMU_BaseInstructions_BRANCH
+            handler = RVEMU_BaseInstructions_BRANCH,
+            can_branch = true
         }
 
         self.opcodes[bin("0000011")] = {
             name = "LOAD",
             type = "I",
-            handler = RVEMU_BaseInstructions_LOAD
+            handler = RVEMU_BaseInstructions_LOAD,
+            can_branch = false
         }
 
         self.opcodes[bin("0100011")] = {
             name = "STORE",
             type = "S",
-            handler = RVEMU_BaseInstructions_STORE
+            handler = RVEMU_BaseInstructions_STORE,
+            can_branch = false
         }
 
         self.opcodes[bin("0010011")] = {
             name = "OP-IMM",
             type = "I",
-            handler = RVEMU_BaseInstructions_OP_IMM
+            handler = RVEMU_BaseInstructions_OP_IMM,
+            can_branch = false
         }
 
         self.opcodes[bin("0110011")] = {
             name = "OP",
             type = "R",
-            handler = RVEMU_BaseInstructions_OP
+            handler = RVEMU_BaseInstructions_OP,
+            can_branch = false
         }
 
         self.opcodes[bin("0001111")] = {
             name = "MISC-MEM",
             type = "I",
-            handler = RVEMU_BaseInstructions_MISC_MEM
+            handler = RVEMU_BaseInstructions_MISC_MEM,
+            can_branch = false
         }
 
         self.opcodes[bin("1110011")] = {
             name = "SYSTEM",
             type = "I",
-            handler = RVEMU_BaseInstructions_SYSTEM
+            handler = RVEMU_BaseInstructions_SYSTEM,
+            can_branch = false
         }
 
         self.opcodes[bin("0000111")] = {
             name = "FLW",
             type = "I",
-            handler = RVEMU_FPU_Load
+            handler = RVEMU_FPU_Load,
+            can_branch = false
         }
 
         self.opcodes[bin("0100111")] = {
             name = "FSW",
             type = "S",
-            handler = RVEMU_FPU_Store
+            handler = RVEMU_FPU_Store,
+            can_branch = false
         }
-        
+
         self.opcodes[bin("1000011")] = {
             name = "FMADD.S",
             type = "R4",
-            handler = RVEMU_FPU_FMADD
+            handler = RVEMU_FPU_FMADD,
+            can_branch = false
         }
         
         self.opcodes[bin("1000111")] = {
             name = "FMSUB.S",
             type = "R4",
-            handler = RVEMU_FPU_FMSUB
+            handler = RVEMU_FPU_FMSUB,
+            can_branch = false
         }
         
         self.opcodes[bin("1001011")] = {
             name = "FNMSUB.S",
             type = "R4",
-            handler = RVEMU_FPU_FNMSUB
+            handler = RVEMU_FPU_FNMSUB,
+            can_branch = false
         }
         
         self.opcodes[bin("1001111")] = {
             name = "FNMADD.S",
             type = "R4",
-            handler = RVEMU_FPU_FNMADD
+            handler = RVEMU_FPU_FNMADD,
+            can_branch = false
         }
         
         self.opcodes[bin("1010011")] = {
             name = "OP-FP",
             type = "R",
-            handler = RVEMU_FPU_OP_FP
+            handler = RVEMU_FPU_OP_FP,
+            can_branch = false
         }
 
         self.frame = RVEMU_GetFrame(self)
@@ -311,7 +329,6 @@ function RVEMU_GetCore()
         self.jumped = false
         self.is_running = 1
         self.is_stopped = 0
-        self.counter = 0
         self.time_sum = 0
         
         self.frame_start_time = GetTime()
@@ -319,6 +336,7 @@ function RVEMU_GetCore()
 
         self.is_profiling = false
         self.profiling_log = {}
+        self.counter = 0
 
     end
 
@@ -333,11 +351,11 @@ function RVEMU_GetCore()
         local instr_type = opcode_info.type
         local handler = opcode_info.handler
         local result = nil
-        
+        local pc_delta = 4
         if instr_type == "U" then
             local rd = decode_rd(instruction)
             local imm_value = bit_band(instruction, 0xfffff000)
-            result = { rd, imm_value }
+            result = { rd, imm_value } 
 
         elseif instr_type == "J" then
             local rd = decode_rd(instruction)
@@ -346,13 +364,14 @@ function RVEMU_GetCore()
             imm_value = bit_bor(imm_value, bit_band(instruction, 0xff000))
             imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 11), 0x100000))
             imm_value = RVEMU_set_sign(imm_value, 21)
+            pc_delta = imm_value
             result = { rd, imm_value }
 
         elseif instr_type == "I" then
             local rd = decode_rd(instruction)
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
-            local imm_value = bit_rshift(instruction, 20) % 0x1000
+            local imm_value = bit_band(bit_rshift(instruction, 20), 0xfff)
             imm_value = RVEMU_set_sign(imm_value, 12)
             result = { rd, funct3, rs1, imm_value }
 
@@ -362,16 +381,17 @@ function RVEMU_GetCore()
             local rs2 = decode_rs2(instruction)
             local imm_value = bit_band(bit_rshift(instruction, 7), 0x1e)
             imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 20), 0x7e0))
-            imm_value = bit_bor(imm_value, bit_band((instruction * 16) --[[% 0x100000000]], 0x800))
+            imm_value = bit_bor(imm_value, bit_band(bit.lshift(instruction, 4), 0x800))
             imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 19), 0x1000))
             imm_value = RVEMU_set_sign(imm_value, 13)
+            pc_delta = nil
             result = { funct3, rs1, rs2, imm_value }
 
         elseif instr_type == "S" then
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
             local rs2 = decode_rs2(instruction)
-            local imm_value = bit_bor((bit_rshift(instruction, 25) * 32)--[[% 0x100000000]], decode_rd(instruction))
+            local imm_value = bit_bor(bit.lshift(bit_rshift(instruction, 25), 5), decode_rd(instruction))
             imm_value = RVEMU_set_sign(imm_value, 12)
             result = { funct3, rs1, rs2, imm_value }
 
@@ -392,31 +412,53 @@ function RVEMU_GetCore()
             local rs3 = decode_rs3(instruction)
             result = { rd, funct3, rs1, rs2, funct2, rs3 }
         end
-        return opcodes[opcode].handler(self, unpack(result))
+        return {
+            opcode_info.handler(self, unpack(result)),
+            opcode_info,
+            pc_delta
+        }
     end
 
-    -- Executes a single instruction step in the CPU.
-    function RiscVCore:Step()
-        self.counter = self.counter + 1
-        
-        local registers = self.registers
-        local pc = registers[33]
-        local addr_cache = self.addr_cache
-
-        local decoded_instr = addr_cache[pc]
-        if decoded_instr == nil then
+    --- decode functions up to the next branch
+    function RiscVCore:DecodeInstructionSequence(pc)
+        -- for 
+        local instr_seq = {}
+        while true do
             local instruction = self.memory:Get(pc)
-            local instr_cache = self.instr_cache
-
-            decoded_instr = instr_cache[instruction]
-            if decoded_instr == nil then
-                decoded_instr = self:DecodeInstruction(instruction)
-                instr_cache[instruction] = decoded_instr
+            local instr_data = self.instr_cache[instruction]
+            if instr_data == nil then
+                -- print(pc, instruction)
+                instr_data = self:DecodeInstruction(instruction)
+                self.instr_cache[instruction] = instr_data
             end
-            addr_cache[pc] = decoded_instr
+            instr_seq[#instr_seq + 1] = instr_data
+            if instr_data[2].can_branch then break end
+            pc = pc + instr_data[3]
         end
+        local seq_len = #instr_seq
+        local fn = nil
+        local cur_instr = instr_seq[seq_len]
+        local prev_instr = nil
+        for i = seq_len, 2, -1 do
+            fn = cur_instr[1](fn, pc)
+            self.addr_cache[pc] = fn
+            prev_instr = instr_seq[i - 1]
+            pc = pc - prev_instr[3]
+            cur_instr = prev_instr
+        end
+        fn = cur_instr[1](fn, pc)
+        self.addr_cache[pc] = fn
+        return fn 
+    end
 
-        decoded_instr()
+    -- Executes a instruction sequence in the CPU.
+    function RiscVCore:Step()
+        local pc = self.registers[33]
+        local decoded_instr = self.addr_cache[pc]
+        if decoded_instr == nil then
+            decoded_instr = self:DecodeInstructionSequence(pc)
+        end
+        return decoded_instr()
     end
 
     -- Checks if the CPU should yield execution and schedules a resume if needed.
@@ -431,7 +473,7 @@ function RVEMU_GetCore()
 
     -- Prints the values of all CPU registers to the console.
     function RiscVCore:PrintRegs()
-        for i = 0, 31 do
+        for i = 1, 32 do
             print(string.format("x%d = 0x%x", i, self.registers[i]))
         end
         print(string.format("pc = 0x%x", self.registers[33]))
@@ -460,6 +502,7 @@ function RVEMU_GetCore()
         self.is_profiling = true
         local old_step = self.Step
         self.Step = function(self)
+            self.counter = self.counter + 1
             if self.counter % n ~= 0 then
                 old_step(self)
                 return
