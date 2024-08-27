@@ -98,8 +98,82 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             dest = dest + 1
             position = position + step
         end
+    elseif syscall_num == 107 then -- draw_patch
+        
+        -- void DG_DrawPatch(int col, int w, int x, uint8_t *desttop, uint8_t* source, uint8_t *m_col, uint8_t *m_patch) {
+        --     #ifdef ENABLE_WOW_API
+        --         asm volatile (
+        --             "mv a0, %0\n"  
+        --             "mv a1, %1\n"  
+        --             "mv a2, %2\n"  
+        --             "mv a3, %3\n"  
+        --             "mv a4, %4\n"  
+        --             "mv a5, %5\n"  
+        --             "mv a6, %6\n"  
+        --             "li a7, %7\n"  
+        --             "ecall\n"      
+        --             : 
+        --             : "r" (col), "r" (w), "r" (x), "r" (desttop), "r" (source), "r" (m_col), "r" (m_patch), "i" (SYS_WOW_draw_patch)  
+        --             : "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"  
+        --         );
+        --     #else
+        --         int count;
+        --         uint8_t* dest;
+            
+        --         for ( ; col<w ; x++, col++, desttop++)
+        --         {
+        --             m_col = ((byte *)m_patch + LONG(*(int *)((char *)m_patch + 8 + col * 4))); // + (*(m_patch + 8 + 4 * col)) );
+            
+        --             // step through the posts in a column
+        --             while (*(m_col) != 0xff )
+        --             {
+        --                 source = m_col + 3;
+        --                 dest = desttop + (*m_col)*320;
+        --                 count = *(m_col + 1);
+            
+        --                 while (count--)
+        --                 {
+        --                     *dest = *source++;
+        --                     dest += 320;
+        --                 }
+        --                 m_col = (m_col + *(m_col + 1) + 4);
+        --             }
+        --         }
+        --     #endif
+        --     }
+        local col = registers[10]
+        local w = registers[11]
+        local x = registers[12]
+        local desttop = registers[13]
+        local source = registers[14]
+        local m_col = registers[15]
+        local m_patch = registers[16]
+        local write1 = CPU.memory:Write(1)
+        local read1 = CPU.memory:Read(1)
+        local read4 = CPU.memory:Read(4)
+        local count
+        local dest
+
+        while col < w do
+            m_col = m_patch + read4(m_patch + 8 + col * 4)
+            while read1(m_col) ~= 0xff do
+                source = m_col + 3
+                dest = desttop + read1(m_col) * 320
+                count = read1(m_col + 1)
+                while count > 0 do
+                    write1(dest, read1(source))
+                    dest = dest + 320
+                    source = source + 1
+                    count = count - 1
+                end
+                m_col = m_col + read1(m_col + 1) + 4
+            end
+            col = col + 1
+            x = x + 1
+            desttop = desttop + 1
+        end
     
-    elseif syscall_num == 107 then
+    elseif syscall_num == 108 then -- memcpy
         -- aligned writes are much faster
         -- implementing https://github.com/nxp-mcuxpresso/mcux-sdk/blob/675a70e9b9ea5de2177f8881c31f464e0cb30528/utilities/misc_utilities/fsl_memcpy.S
         local write1 = CPU.memory:Write(1)
@@ -218,7 +292,7 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         local nanoseconds = math.floor((dtime % seconds) * 1000000)
 
         CPU.memory:Write(4)(struct_addr, seconds)
-        CPU.memory:Write(4)(struct_addr + 8, nanoseconds % 0x100000000)
+        CPU.memory:Write(4)(struct_addr + 8, bit.band(nanoseconds, 0xffffffff))
     else
         --assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
     end

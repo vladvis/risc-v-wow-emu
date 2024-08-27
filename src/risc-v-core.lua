@@ -421,7 +421,7 @@ function RVEMU_GetCore()
 
     --- decode functions up to the next branch
     function RiscVCore:DecodeInstructionSequence(pc)
-        -- for 
+        -- forward loop to get to the next branch
         local instr_seq = {}
         while true do
             local instruction = self.memory:Get(pc)
@@ -435,6 +435,8 @@ function RVEMU_GetCore()
             if instr_data[2].can_branch then break end
             pc = pc + instr_data[3]
         end
+
+        -- backward loop to generate the instruction sequence with knowledge of the next instructions
         local seq_len = #instr_seq
         local fn = nil
         local cur_instr = instr_seq[seq_len]
@@ -494,12 +496,26 @@ function RVEMU_GetCore()
         end
     end
 
+    --- decode single only a instruction disabling the sequencing
+    function RiscVCore:DecodeSingleInstructionAsSequence(pc)
+        local instruction = self.memory:Get(pc)
+        local instr_data = self.instr_cache[instruction]
+        if instr_data == nil then
+            instr_data = self:DecodeInstruction(instruction)
+            self.instr_cache[instruction] = instr_data
+        end
+        local pc_delta = instr_data[3]
+        fn = instr_data[1](function() self.registers[33] = self.registers[33] + (pc_delta ~= nil and pc_delta or 0) end, pc)
+        self.addr_cache[pc] = fn
+        return fn 
+    end
     -- Enable profiling and wrap the Step function to measure execution time.
     function RiscVCore:EnableProfiling(n)
         if self.is_profiling then
             return
         end
         self.is_profiling = true
+        self.DecodeInstructionSequence = self.DecodeSingleInstructionAsSequence
         local old_step = self.Step
         self.Step = function(self)
             self.counter = self.counter + 1

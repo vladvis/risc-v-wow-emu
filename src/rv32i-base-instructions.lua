@@ -106,8 +106,8 @@ function RVEMU_BaseInstructions_JALR(CPU, rd, funct3, rs1, imm_value)
     return function(next, pc)
         -- assert(next == nil, "next is not nil in jump function")
         local return_address = (pc + 4) -- % 0x100000000
+        
         return function()
-            
             if (rd ~= 0) then
                 registers[rd] = (return_address)
             end
