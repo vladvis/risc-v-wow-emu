@@ -12,7 +12,7 @@ function RVEMU_GetMemory()
         -- assert(self.mem[addr] ~= nil, string.format("addr 0x%x is not allocated", addr))
         --[[
         local hi = bit.rshift(addr, 12)
-        local lo = bit.band(addr, 0xfff)
+        local lo = addr % 0x1000
         return self.mem[hi][lo]
         ]]
         return self.mem[addr]
@@ -25,7 +25,7 @@ function RVEMU_GetMemory()
         -- assert(addr % 4 == 0, "addr must be aligned (set)")
         --[[
         local hi = bit.rshift(addr, 12)
-        local lo = bit.band(addr, 0xfff)
+        local lo = addr % 0x1000
         if self.mem[hi] == nil then
             self.mem[hi] = {}
         end
@@ -56,7 +56,7 @@ function RVEMU_GetMemory()
                 else -- misaligned read
                     local misalign = misalign
                     local val1 = bit.rshift(self:Get(addr - misalign), misalign * 8)
-                    local val2 = bit.band(bit.lshift(self:Get(addr + (4 - misalign)), (4 - misalign) * 8), 0xffffffff)
+                    local val2 = (self:Get(addr + (4 - misalign)) * 2^((4 - misalign) * 8))--[[% 0x100000000]]
                     return bit.bor(val1, val2)
                 end
             end
@@ -64,19 +64,19 @@ function RVEMU_GetMemory()
             return function(addr)
                 local misalign = addr % 4
                 if misalign == 0 then
-                    return bit.band(self:Get(addr), 0xffff)
+                    return self:Get(addr) % 0x10000
                 elseif misalign == 3 then
                     local val1 = bit.rshift(self:Get(addr - 3), 24)
-                    local val2 = bit.band(bit.lshift(self:Get(addr + 1), 8), 0xff00)
+                    local val2 = bit.band((self:Get(addr + 1) * 0x100)--[[% 0x100000000]], 0xff00)
                     return bit.bor(val1, val2)
                 else
-                    return bit.band(bit.rshift(self:Get(addr - misalign), misalign * 8), 0xffff)
+                    return bit.rshift(self:Get(addr - misalign), misalign * 8) % 0x10000
                 end
             end
         elseif vsize == 1 then
             return function(addr)
                 local misalign = addr % 4
-                return bit.band(bit.rshift(self:Get(addr - misalign), misalign * 8), 0xff)
+                return bit.rshift(self:Get(addr - misalign), misalign * 8) % 0x100
             end
         elseif vsize == 'float' then
             return function(addr)
@@ -108,11 +108,11 @@ function RVEMU_GetMemory()
                     self:Set(addr, value)
                 else -- misaligned write
                     local val1 = bit.band(self:Get(addr - misalign), bit.rshift(0xffffffff, 32 - misalign * 8))
-                    val1 = bit.band(bit.bor(val1, bit.lshift(value, misalign * 8)), 0xffffffff)
+                    val1 = bit.bor(val1, (value * 2^(misalign * 8))) ----[[% 0x100000000]]
                     self:Set(addr - misalign, val1)
 
-                    local val2 = bit.band(self:Get(addr + (4 - misalign)), bit.lshift(0xffffffff, misalign * 8))
-                    val2 = bit.band(bit.bor(val2, bit.rshift(value, (32 - misalign * 8))), 0xffffffff)
+                    local val2 = bit.band(self:Get(addr + (4 - misalign)), (0xffffffff * 2^(misalign * 8)))
+                    val2 = bit.bor(val2, bit.rshift(value, (32 - misalign * 8))) ----[[% 0x100000000]]
                     self:Set(addr + (4 - misalign), val2)
                 end
             end
@@ -121,23 +121,23 @@ function RVEMU_GetMemory()
                 local misalign = bit.band(addr, 3)
                 if misalign == 0 then
                     local val = bit.band(self:Get(addr), 0xffff0000)
-                    val = bit.bor(val, bit.band(value, 0x0000ffff))
+                    val = bit.bor(val, value % 0x10000)
                     self:Set(addr, val)
                 elseif misalign == 1 then
                     local val = bit.band(self:Get(addr - 1), 0xff0000ff)
-                    val = bit.bor(val, bit.band(bit.lshift(value, 8), 0x00ffff00))
+                    val = bit.bor(val, bit.band((value * 0x100), 0x00ffff00))
                     self:Set(addr - 1, val)
                 elseif misalign == 2 then
-                    local val = bit.band(self:Get(addr - 2), 0x0000ffff)
-                    val = bit.bor(val, bit.band(bit.lshift(value, 16), 0xffff0000))
+                    local val = self:Get(addr - 2) % 0x10000
+                    val = bit.bor(val, bit.band((value * 0x10000), 0xffff0000))
                     self:Set(addr - 2, val)
                 elseif misalign == 3 then
-                    local val1 = bit.band(self:Get(addr - 3), 0x00ffffff)
-                    val1 = bit.bor(val1, bit.band(bit.lshift(value, 24), 0xff000000))
+                    local val1 = self:Get(addr - 3) % 0x1000000
+                    val1 = bit.bor(val1, bit.band((value * 0x1000000), 0xff000000))
                     self:Set(addr - 3, val1)
 
                     local val2 = bit.band(self:Get(addr + 1), 0xffffff00)
-                    val2 = bit.bor(val2, bit.band(bit.rshift(value, 8), 0x000000ff))
+                    val2 = bit.bor(val2, bit.rshift(value, 8) % 0x100)
                     self:Set(addr + 1, val2)
                 end
             end
@@ -146,19 +146,19 @@ function RVEMU_GetMemory()
                 local misalign = bit.band(addr, 3)
                 if misalign == 0 then
                     local val = bit.band(self:Get(addr), 0xffffff00)
-                    val = bit.bor(val, bit.band(value, 0x000000ff))
+                    val = bit.bor(val, value % 0x100)
                     self:Set(addr, val)
                 elseif misalign == 1 then
                     local val = bit.band(self:Get(addr - 1), 0xffff00ff)
-                    val = bit.bor(val, bit.band(bit.lshift(value, 8), 0x0000ff00))
+                    val = bit.bor(val, bit.band((value * 0x100), 0x0000ff00))
                     self:Set(addr - 1, val)
                 elseif misalign == 2 then
                     local val = bit.band(self:Get(addr - 2), 0xff00ffff)
-                    val = bit.bor(val, bit.band(bit.lshift(value, 16), 0x00ff0000))
+                    val = bit.bor(val, bit.band((value * 0x10000), 0x00ff0000))
                     self:Set(addr - 2, val)
                 else
-                    local val = bit.band(self:Get(addr - 3), 0x00ffffff)
-                    val = bit.bor(val, bit.band(bit.lshift(value, 24), 0xff000000))
+                    local val = self:Get(addr - 3) % 0x1000000
+                    val = bit.bor(val, bit.band((value * 0x1000000), 0xff000000))
                     self:Set(addr - 3, val)
                 end
             end

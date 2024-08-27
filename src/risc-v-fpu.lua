@@ -252,19 +252,19 @@ function RVEMU_FPU_OP_FP(CPU, rd, funct3, rs1, rs2, funct7)
                 result = RVEMU_float_to_bits(op1)
             elseif funct3 == 0x01 then -- FCLASS.S | FCLASS.D
                 if op1 == RVEMU_INF_INV then
-                    result = bit.lshift(1, 0)
+                    result = 0x1
                 elseif op1 == RVEMU_MINUS_Z then
-                    result = bit.lshift(1, 3)
+                    result = 0x8
                 elseif op1 == 0 then
-                    result = bit.lshift(1, 4)
+                    result = 0x10
                 elseif op1 == RVEMU_INF then
-                    result = bit.lshift(1, 7)
+                    result = 0x80
                 elseif op1 == RVEMU_NAN then
-                    result = bit.lshift(1, 8)
+                    result = 0x100
                 elseif op1 < 0 then
-                    result = bit.lshift(1, 1)
+                    result = 0x2
                 elseif op1 > 0 then
-                    result = bit.lshift(1, 6)
+                    result = 0x40
                 else
                     --assert(false, "WOOT?")
                 end

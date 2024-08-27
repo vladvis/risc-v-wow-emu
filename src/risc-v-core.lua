@@ -23,15 +23,15 @@ function RVEMU_GetCore()
     end
 
     local function decode_rd(instr)
-        return bit.band(bit.rshift(instr, 7), 0x1f) -- (instr >> 7) & 0b11111
+        return bit.rshift(instr, 7) % 0x20 -- (instr >> 7) & 0b11111
     end
 
     local function decode_rs1(instr)
-        return bit.band(bit.rshift(instr, 15), 0x1f) -- (instr >> 15) & 0b11111
+        return bit.rshift(instr, 15) % 0x20 -- (instr >> 15) & 0b11111
     end
 
     local function decode_rs2(instr)
-        return bit.band(bit.rshift(instr, 20), 0x1f) -- (instr >> 20) & 0b11111
+        return bit.rshift(instr, 20) % 0x20 -- (instr >> 20) & 0b11111
     end
 
     local function decode_funct3(instr)
@@ -43,7 +43,7 @@ function RVEMU_GetCore()
     end
 
     local function decode_rs3(instr)
-        return bit.band(bit.rshift(instr, 27), 0x1f) -- (instr >> 27) & 0b11111
+        return bit.rshift(instr, 27) % 0x20 -- (instr >> 27) & 0b11111
     end
 
     -- Loads the value from the specified register.
@@ -60,7 +60,7 @@ function RVEMU_GetCore()
     function RiscVCore:StoreRegister(dest, value)
         if dest ~= 0 then
             --assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
-            self.registers[dest] = bit.band(value, 0xffffffff)
+            self.registers[dest] = value % 0x100000000
         end
     end
 
@@ -69,7 +69,7 @@ function RVEMU_GetCore()
     --[[function RiscVCore:StorePC(value)
         --assert(value % 4 == 0, "pc must be aligned")
         self.jumped = true
-        self.registers[33] = bit.band(value, 0xffffffff)
+        self.registers[33] = value % 0x100000000
     end]]
 
     -- Sets the memory for the CPU with the given memory map.
@@ -110,7 +110,7 @@ function RVEMU_GetCore()
     end
 
     function RiscVCore:EncodeFCSR()
-        return self:EncodeFFLAGS() + bit.lshift(self:EncodeFRM(), 5)
+        return self:EncodeFFLAGS() + (self:EncodeFRM() * 32) % 0x100000000
     end
 
     function RiscVCore:DecodeFRM(value)
@@ -126,8 +126,8 @@ function RVEMU_GetCore()
     end
 
     function RiscVCore:DecodeFCSR(value)
-        local v1 = bit.band(value, 0x1f)
-        local v2 = bit.band(bit.rshift(value, 5), 0x7)
+        local v1 = value % 0x20
+        local v2 = bit.rshift(value, 5) % 0x8
         self:DecodeFFLAGS(v1)
         self:DecodeFRM(v2)
     end
@@ -154,7 +154,7 @@ function RVEMU_GetCore()
             self:DecodeFCSR(value)
         else
             --assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
-            self.csr[csr_address] = bit.band(value, 0xffffffff)
+            self.csr[csr_address] = value % 0x100000000
         end
     end
 
@@ -317,6 +317,9 @@ function RVEMU_GetCore()
         self.frame_start_time = GetTime()
         self.frame_cnt = 0
 
+        self.is_profiling = false
+        self.profiling_log = {}
+
     end
 
     function RiscVCore:DecodeInstruction(instruction)
@@ -349,7 +352,7 @@ function RVEMU_GetCore()
             local rd = decode_rd(instruction)
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
-            local imm_value = bit_band(bit_rshift(instruction, 20), 0xfff)
+            local imm_value = bit_rshift(instruction, 20) % 0x1000
             imm_value = RVEMU_set_sign(imm_value, 12)
             result = { rd, funct3, rs1, imm_value }
 
@@ -359,7 +362,7 @@ function RVEMU_GetCore()
             local rs2 = decode_rs2(instruction)
             local imm_value = bit_band(bit_rshift(instruction, 7), 0x1e)
             imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 20), 0x7e0))
-            imm_value = bit_bor(imm_value, bit_band(bit.lshift(instruction, 4), 0x800))
+            imm_value = bit_bor(imm_value, bit_band((instruction * 16) --[[% 0x100000000]], 0x800))
             imm_value = bit_bor(imm_value, bit_band(bit_rshift(instruction, 19), 0x1000))
             imm_value = RVEMU_set_sign(imm_value, 13)
             result = { funct3, rs1, rs2, imm_value }
@@ -368,7 +371,7 @@ function RVEMU_GetCore()
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
             local rs2 = decode_rs2(instruction)
-            local imm_value = bit_bor(bit.lshift(bit_rshift(instruction, 25), 5), decode_rd(instruction))
+            local imm_value = bit_bor((bit_rshift(instruction, 25) * 32)--[[% 0x100000000]], decode_rd(instruction))
             imm_value = RVEMU_set_sign(imm_value, 12)
             result = { funct3, rs1, rs2, imm_value }
 
@@ -394,13 +397,8 @@ function RVEMU_GetCore()
 
     -- Executes a single instruction step in the CPU.
     function RiscVCore:Step()
-        local counter = self.counter
-        self.counter = counter - 1
-        if counter == 0 then
-            counter = 1000000
-            self:MaybeYieldCPU()
-        end
-
+        self.counter = self.counter + 1
+        
         local registers = self.registers
         local pc = registers[33]
         local addr_cache = self.addr_cache
@@ -454,5 +452,35 @@ function RVEMU_GetCore()
         end
     end
 
+    -- Enable profiling and wrap the Step function to measure execution time.
+    function RiscVCore:EnableProfiling(n)
+        if self.is_profiling then
+            return
+        end
+        self.is_profiling = true
+        local old_step = self.Step
+        self.Step = function(self)
+            if self.counter % n ~= 0 then
+                old_step(self)
+                return
+            end
+            local pc = self.registers[33]
+            local ra = self.registers[1]
+            local instruction = self.memory:Get(pc)
+            local start_time = debugprofilestop()
+            old_step(self)
+            local end_time = debugprofilestop()
+            self.time_sum = self.time_sum + (end_time - start_time)
+            
+            local profiling_log = self.profiling_log
+            local lplog = #profiling_log
+            profiling_log[lplog + 1] = { pc, ra, instruction, end_time - start_time }
+
+            if lplog % (n * 10) == 0 then
+                self.is_running = 0
+                RunNextFrame(function() RVEMU_Resume(self) end)
+            end
+        end
+    end
     return RiscVCore
 end

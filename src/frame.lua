@@ -410,7 +410,7 @@ function RVEMU_GetFrame(CPU)
                 local data = read4(framebuffer_addr + offset)
 
                 for i=0,3 do
-                    local data_loc = bit.band(data, 0xff)
+                    local data_loc = data % 0x100
                     local color = self.vga_to_rgb[data_loc]
                     local pixel = self:GetPixel(x + i, y, self.precalc_partn[y], self.precalc_localy[y], offset)
                     if color ~= pixel.color then

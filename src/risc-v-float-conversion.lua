@@ -20,16 +20,16 @@ function RVEMU_float_to_bits(f)
         exponent = exponent + 126
     end
 
-    return bit.bor(bit.lshift(sign, 31), bit.lshift(exponent, 23), math.floor(mantissa))
+    return bit.bor((sign * 0x80000000) --[[% 0x100000000]], (exponent * 0x800000)--[[% 0x100000000]], math.floor(mantissa))
 end
 
 -- Converts an IEEE 754 binary representation to a floating-point number.
 -- @param b The binary representation to convert.
 -- @return The floating-point number.
 function RVEMU_bits_to_float(b)
-    local sign = bit.band(bit.rshift(b, 31), 0x1)
-    local exponent = bit.band(bit.rshift(b, 23), 0xFF)
-    local mantissa = bit.band(b, 0x7FFFFF)
+    local sign = bit.rshift(b, 31) % 2
+    local exponent = bit.rshift(b, 23) % 0x100
+    local mantissa = b % 0x800000
 
     if exponent == 0 then
         if mantissa == 0 then
@@ -70,7 +70,7 @@ function RVEMU_double_to_bits(d)
     end
 
     local lo = mantissa % (2^32)
-    local hi = bit.bor(bit.lshift(sign, 31), bit.lshift(exponent, 20), math.floor(mantissa / (2^32)))
+    local hi = bit.bor((sign * 0x80000000) % 100000000, (exponent * 0x100000) % 100000000, math.floor(mantissa / (0x100000000)))
 
     return hi, lo
 end
@@ -80,9 +80,9 @@ end
 -- @param lo The low part of the binary representation.
 -- @return The double-precision floating-point number.
 function RVEMU_bits_to_double(hi, lo)
-    local sign = bit.band(bit.rshift(hi, 31), 0x1)
-    local exponent = bit.band(bit.rshift(hi, 20), 0x7FF)
-    local mantissa_hi = bit.band(hi, 0xFFFFF)
+    local sign = bit.rshift(hi, 31) % 2
+    local exponent = bit.rshift(hi, 20) % 0x800
+    local mantissa_hi = hi % 0x100000
     local mantissa_lo = lo
     
     local mantissa = mantissa_hi * (2^32) + mantissa_lo

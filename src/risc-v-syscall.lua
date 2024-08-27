@@ -98,7 +98,101 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             dest = dest + 1
             position = position + step
         end
+    
+    elseif syscall_num == 107 then
+        -- aligned writes are much faster
+        -- implementing https://github.com/nxp-mcuxpresso/mcux-sdk/blob/675a70e9b9ea5de2177f8881c31f464e0cb30528/utilities/misc_utilities/fsl_memcpy.S
+        local write1 = CPU.memory:Write(1)
+        local write2 = CPU.memory:Write(2)
+        local write4 = CPU.memory:Write(4)
         
+        local read1 = CPU.memory:Read(1)
+        local read2 = CPU.memory:Read(2)
+        local read4 = CPU.memory:Read(4)
+
+        local dst = registers[10]
+        local src = registers[11]
+        local n = registers[12]
+        
+        registers[10] = dst -- retval is always the same
+
+        local tmp = 0
+
+        if n == 0 then return end
+        while src % 4 ~= 0 do
+            write1(dst, read1(src))
+            dst = dst + 1
+            src = src + 1
+            n = n - 1
+            if n == 0 then return end
+        end
+        if dst % 4 == 0 then
+            while n >= 16 do
+                write4(dst, read4(src))
+                write4(dst + 4, read4(src + 4))
+                write4(dst + 8, read4(src + 8))
+                write4(dst + 12, read4(src + 12))
+                dst = dst + 16
+                src = src + 16
+                n = n - 16
+            end
+            if n >= 8 then
+                write4(dst, read4(src))
+                write4(dst + 4, read4(src + 4))
+                dst = dst + 8
+                src = src + 8
+                n = n - 8
+            end
+            if n >= 4 then
+                write4(dst, read4(src))
+                dst = dst + 4
+                src = src + 4
+                n = n - 4
+            end
+            if n >= 2 then
+                write2(dst, read2(src))
+                dst = dst + 2
+                src = src + 2
+                n = n - 2
+            end
+            if n >= 1 then
+                write1(dst, read1(src))
+                dst = dst + 1
+                src = src + 1
+                n = n - 1
+            end
+        else
+            if dst % 2 == 0 then
+                while n >= 4 do
+                    tmp = read4(src)
+                    src = src + 4
+                    write2(dst, tmp % 0x10000)
+                    dst = dst + 2
+                    write2(dst, bit.rshift(tmp, 16))
+                    dst = dst + 2
+                    n = n - 4
+                end
+            else
+                while n >= 4 do
+                    tmp = read4(src)
+                    src = src + 4
+                    write1(dst, tmp % 0x100)
+                    dst = dst + 1
+                    write2(dst, bit.rshift(tmp, 8) % 0x10000)
+                    dst = dst + 2
+                    write1(dst, bit.rshift(tmp, 24))
+                    dst = dst + 1
+                    n = n - 4
+                end
+            end
+            while n > 0 do
+                write1(dst, read1(src))
+                dst = dst + 1
+                src = src + 1
+                n = n - 1
+            end
+        end
+
     elseif syscall_num == 80 then -- newfstat
         -- local stat_addr = registers[10]
         -- CPU.memory:Write(stat_addr + 32, 512, 4) -- stat.st_blksize = 512
@@ -124,7 +218,7 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         local nanoseconds = math.floor((dtime % seconds) * 1000000)
 
         CPU.memory:Write(4)(struct_addr, seconds)
-        CPU.memory:Write(4)(struct_addr + 8, bit.band(nanoseconds, 0xffffffff))
+        CPU.memory:Write(4)(struct_addr + 8, nanoseconds % 0x100000000)
     else
         --assert(false, "syscall " .. tostring(syscall_num) .. " is not implemented")
     end

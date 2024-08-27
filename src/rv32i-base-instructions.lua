@@ -47,7 +47,7 @@ function RVEMU_BaseInstructions_LUI(CPU, rd, imm_value)
     local registers = CPU.registers
     
     return function()
-        registers[rd] = bit.band(imm_value, 0xffffffff)
+        registers[rd] = imm_value % 0x100000000
         registers[33] = registers[33] + 4
     end
 end
@@ -60,7 +60,7 @@ function RVEMU_BaseInstructions_AUIPC(CPU, rd, imm_value)
     local registers = CPU.registers
     
     return function()
-        registers[rd] = bit.band(registers[33] + imm_value, 0xffffffff)
+        registers[rd] = (registers[33] + imm_value) % 0x100000000
         registers[33] = registers[33] + 4
     end
 end
@@ -76,7 +76,7 @@ function RVEMU_BaseInstructions_JAL(CPU, rd, imm_value)
     return function()
         local return_address = CPU.registers[33] + 4
         if (rd ~= 0) then
-            registers[rd] = bit.band(return_address, 0xffffffff)
+            registers[rd] = (return_address) % 0x100000000
         end
         registers[33] = registers[33] + imm_value
     end
@@ -97,7 +97,7 @@ function RVEMU_BaseInstructions_JALR(CPU, rd, funct3, rs1, imm_value)
 
         local return_address = registers[33] + 4
         if (rd ~= 0) then
-            registers[rd] = bit.band(return_address, 0xffffffff)
+            registers[rd] = (return_address) % 0x100000000
         end
 
         registers[33] = bit.band(registers[rs1] + imm_value) -- , 0xFFFFFFFE
@@ -169,7 +169,7 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
             local addr = registers[rs1] + imm_value
             value = CPU_memory_Read_1(addr)
             value = RVEMU_set_unsign_32(RVEMU_set_sign_8(value))
-            registers[rd] = bit.band(value, 0xffffffff)
+            registers[rd] = (value) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 1 then -- LH
@@ -177,28 +177,28 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
             local addr = registers[rs1] + imm_value
             value = CPU_memory_Read_2(addr)
             value = RVEMU_set_unsign_32(RVEMU_set_sign_16(value))
-            registers[rd] = bit.band(value, 0xffffffff)
+            registers[rd] = (value) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 2 then -- LW
         return function()
             local addr = registers[rs1] + imm_value
             value = CPU_memory_Read_4(addr)
-            registers[rd] = bit.band(value, 0xffffffff)
+            registers[rd] = (value) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 4 then -- LBU
         return function()
             local addr = registers[rs1] + imm_value
             value = CPU_memory_Read_1(addr)
-            registers[rd] = bit.band(value, 0xffffffff)
+            registers[rd] = (value) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 5 then -- LHU
         return function()
             local addr = registers[rs1] + imm_value
             value = CPU_memory_Read_2(addr)
-            registers[rd] = bit.band(value, 0xffffffff)
+            registers[rd] = (value) % 0x100000000
             registers[33] = registers[33] + 4
         end
     else
@@ -261,7 +261,8 @@ function RVEMU_BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
     local result = nil
     local RVEMU_set_sign_32 = _RVEMU_set_sign(32)
     local RVEMU_set_sign_12 = _RVEMU_set_sign(12)
-    local band_imm_0x1f = bit.band(imm_value, 0x1F)
+    local band_imm_0x1f = imm_value % 0x20
+    local exp2_band_imm_0x1f = 2 ^ band_imm_0x1f
     
     
     local op1 = nil
@@ -269,49 +270,49 @@ function RVEMU_BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
         return function()
             op1 = registers[rs1]
             result = op1 + imm_value
-            registers[rd] = bit.band(result, 0xffffffff)
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x2 then -- SLTI
         return function()
             op1 = registers[rs1]
             result = RVEMU_set_sign_32(op1, 32) < RVEMU_set_sign_12(imm_value) and 1 or 0
-            registers[rd] = bit.band(result, 0xffffffff)
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x3 then -- SLTIU
         return function()
             op1 = registers[rs1]
             result = op1 < imm_value and 1 or 0
-            registers[rd] = bit.band(result, 0xffffffff)
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x4 then -- XORI
         return function()
             op1 = registers[rs1]
             result = bit.bxor(op1, imm_value)
-            registers[rd] = bit.band(result, 0xffffffff)
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x6 then -- ORI
         return function()
             op1 = registers[rs1]
             result = bit.bor(op1, imm_value)
-            registers[rd] = bit.band(result, 0xffffffff)
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x7 then -- ANDI
         return function()
             op1 = registers[rs1]
             result = bit.band(op1, imm_value)
-            registers[rd] = bit.band(result, 0xffffffff)
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x1 then -- SLLI
         return function()
             op1 = registers[rs1]
-            result = bit.lshift(op1, band_imm_0x1f)
-            registers[rd] = bit.band(result, 0xffffffff)
+            result = op1 * exp2_band_imm_0x1f -- % 0x100000000
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x5 then
@@ -322,7 +323,7 @@ function RVEMU_BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
             else -- SRAI
                 result = bit.arshift(op1, band_imm_0x1f)
             end
-            registers[rd] = bit.band(result, 0xffffffff)
+            registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
     else
@@ -354,8 +355,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
 
-                result = bit.band(op1 + op2, 0xFFFFFFFF)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = ((op1 + op2)) % 0x100000000
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x20 then -- SUB
@@ -363,8 +363,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
 
-                result = bit.band(op1 - op2, 0xFFFFFFFF)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = ((op1 - op2)) % 0x100000000
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- MUL (RV32M)
@@ -374,8 +373,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
 
                 local signed_op1 = RVEMU_set_sign_32(op1)
                 local signed_op2 = RVEMU_set_sign_32(op2)
-                result = bit.band(signed_op1 * signed_op2, 0xFFFFFFFF)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = ((signed_op1 * signed_op2)) % 0x100000000
                 registers[33] = registers[33] + 4
             end
         else
@@ -387,8 +385,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
 
-                result = bit.lshift(op1, bit.band(op2, 0x1F))
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = ((op1 * 2^(op2 % 0x20))) % 0x100000000
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- MULH
@@ -400,7 +397,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local signed_op2 = RVEMU_set_sign_32(op2)
                 local full_result = signed_op1 * signed_op2
                 result = math.floor(RVEMU_set_unsign_64(full_result) / 0x100000000)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result) -- multiplication here cant provide anything above 2^64 % 0x100000000
                 registers[33] = registers[33] + 4
             end
         else
@@ -411,8 +408,8 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             return function()
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
-                result = bit.band(RVEMU_set_sign_32(op1) < RVEMU_set_sign_32(op2) and 1 or 0, 0xFFFFFFFF)
-                registers[rd] = bit.band(result, 0xffffffff)
+                result = RVEMU_set_sign_32(op1) < RVEMU_set_sign_32(op2) and 1 or 0
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- MULHSU
@@ -423,7 +420,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local unsigned_op2 = op2
                 local full_result = signed_op1 * unsigned_op2
                 result = math.floor(RVEMU_set_unsign_64(full_result) / 0x100000000)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         else
@@ -434,8 +431,8 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             return function()
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
-                result = bit.band(op1 < op2 and 1 or 0, 0xFFFFFFFF)
-                registers[rd] = bit.band(result, 0xffffffff)
+                result = (op1 < op2 and 1 or 0)--[[% 0x100000000]]
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- MULHU
@@ -444,7 +441,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local op2 = registers[rs2]
                 local full_result = op1 * op2
                 result = math.floor(full_result / 0x100000000)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         else
@@ -456,7 +453,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
                 result = bit.bxor(op1, op2)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- DIV (RV32M)
@@ -468,7 +465,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 else
                     result = RVEMU_set_unsign_32(math.floor(RVEMU_set_sign_32(op1) / RVEMU_set_sign_32(op2)), 32)
                 end
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         else
@@ -479,16 +476,16 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
             return function()
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
-                result = bit.band(bit.rshift(op1, bit.band(op2, 0x1F)), 0xFFFFFFFF)
-                registers[rd] = bit.band(result, 0xffffffff)
+                result = (bit.rshift(op1, op2 % 0x20))--[[% 0x100000000]]
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x20 then -- SRA
             return function()
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
-                result = bit.band(bit.arshift(op1, bit.band(op2, 0x1F)), 0xFFFFFFFF)
-                registers[rd] = bit.band(result, 0xffffffff)
+                result = (bit.arshift(op1, op2 % 0x20))--[[% 0x100000000]]
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- DIVU (RV32M)
@@ -500,7 +497,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 else
                     result = RVEMU_set_unsign_32(math.floor(op1 / op2))
                 end
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         else
@@ -512,7 +509,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
                 result = bit.bor(op1, op2)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- REM (RV32M)
@@ -526,7 +523,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                     local signed_op2 = RVEMU_set_sign_32(op2)
                     result = RVEMU_set_unsign_32(signed_op1 % signed_op2)
                 end
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         else
@@ -538,7 +535,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 local op1 = registers[rs1]
                 local op2 = registers[rs2]
                 result = bit.band(op1, op2)
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         elseif funct7 == 0x01 then -- REMU (RV32M)
@@ -550,7 +547,7 @@ function RVEMU_BaseInstructions_OP(CPU, rd, funct3, rs1, rs2, funct7)
                 else
                     result = RVEMU_set_unsign_32(op1 % op2)
                 end
-                registers[rd] = bit.band(result, 0xffffffff)
+                registers[rd] = (result)--[[% 0x100000000]]
                 registers[33] = registers[33] + 4
             end
         else
@@ -610,42 +607,42 @@ function RVEMU_BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
         return function()
             local csr_value = CPU:ReadCSR(imm_value)
             CPU:WriteCSR(imm_value, registers[rs1])
-            registers[rd] = bit.band(csr_value, 0xffffffff)
+            registers[rd] = (csr_value)--[[% 0x100000000]]
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x2 then -- CSRRS
         return function()
             local csr_value = CPU:ReadCSR(imm_value)
             CPU:WriteCSR(imm_value, bit.bor(csr_value, registers[rs1]))
-            registers[rd] = bit.band(csr_value, 0xffffffff)
+            registers[rd] = (csr_value)--[[% 0x100000000]]
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x3 then -- CSRRC
         return function()
             local csr_value = CPU:ReadCSR(imm_value)
             CPU:WriteCSR(imm_value, bit.band(csr_value, bit.bnot(registers[rs1])))
-            registers[rd] = bit.band(csr_value, 0xffffffff)
+            registers[rd] = (csr_value)--[[% 0x100000000]]
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x5 then -- CSRRWI
         return function()
             local csr_value = CPU:ReadCSR(imm_value)
             CPU:WriteCSR(imm_value, rs1)
-            registers[rd] = bit.band(csr_value, 0xffffffff)
+            registers[rd] = (csr_value)--[[% 0x100000000]]
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x6 then -- CSRRSI
         return function()
             local csr_value = CPU:ReadCSR(imm_value)
             CPU:WriteCSR(imm_value, bit.bor(csr_value, rs1))
-            registers[rd] = bit.band(csr_value, 0xffffffff)
+            registers[rd] = (csr_value)--[[% 0x100000000]]
             registers[33] = registers[33] + 4
         end
     elseif funct3 == 0x7 then -- CSRRCI
         return function()
             local csr_value = CPU:ReadCSR(imm_value)
             CPU:WriteCSR(imm_value, bit.band(csr_value, bit.bnot(rs1)))
-            registers[rd] = bit.band(csr_value, 0xffffffff)
+            registers[rd] = (csr_value)--[[% 0x100000000]]
             registers[33] = registers[33] + 4
         end
     else
