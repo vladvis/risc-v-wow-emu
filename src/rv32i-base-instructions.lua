@@ -276,7 +276,7 @@ function RVEMU_BaseInstructions_OP_IMM(CPU, rd, funct3, rs1, imm_value)
     elseif funct3 == 0x2 then -- SLTI
         return function()
             op1 = registers[rs1]
-            result = RVEMU_set_sign_32(op1, 32) < RVEMU_set_sign_12(imm_value) and 1 or 0
+            result = RVEMU_set_sign_32(op1) < RVEMU_set_sign_12(imm_value) and 1 or 0
             registers[rd] = (result) % 0x100000000
             registers[33] = registers[33] + 4
         end
