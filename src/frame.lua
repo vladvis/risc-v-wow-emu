@@ -317,6 +317,8 @@ function RVEMU_GetFrame(CPU)
         Frame.vga_to_rgb[i] = { colors[i+1][1]/255, colors[i+1][2]/255, colors[i+1][3]/255 }
     end
 
+    Frame.pixels = {}
+
     local FrameBufferTestMixin = {}
 
     function FrameBufferTestMixin:OnLoad()
@@ -337,7 +339,8 @@ function RVEMU_GetFrame(CPU)
                 pixel:SetSize(2, 2)
                 pixel:SetDrawLayer("ARTWORK", 1)
                 pixel.color = 0
-                table.insert(self.FrameBuffer, pixel)
+                self.FrameBuffer[#self.FrameBuffer + 1] = pixel
+                Frame.pixels[#Frame.pixels + 1] = pixel
             end
         end
 
@@ -348,8 +351,8 @@ function RVEMU_GetFrame(CPU)
 
     Frame.FrameBufferTestFrameParted = {}
 
-
-    for i = 1, 4 do
+    -- Without splitting it into parts WoW crashes.
+    for i = 4, 1, -1 do
         local PartFrame = Mixin(CreateFrame("Frame", nil, UIParent), FrameBufferTestMixin)
         PartFrame:OnLoad()
         PartFrame:SetPoint("CENTER", 0, -150 + i * 100)
@@ -382,24 +385,6 @@ function RVEMU_GetFrame(CPU)
     Frame.precalc_localy = {}
     Frame.PartHeight = 50
 
-    -- Retrieves the pixel object at the specified coordinates.
-    -- @param x The x-coordinate of the pixel.
-    -- @param y The y-coordinate of the pixel.
-    -- @param PartN The part number of the frame.
-    -- @param localy The local y-coordinate within the part.
-    -- @param offset The offset in the framebuffer.
-    -- @return The pixel object at the specified coordinates.
-    function Frame:GetPixel(x, y, PartN, localy, offset)
-        --local PartN = 4 - math.floor(y / PartHeight)
-        --local localy = y % PartHeight
-        return self.FrameBufferTestFrameParted[PartN].FrameBuffer[localy * 320 + x + 1]
-    end
-
-    for i = 0, 200-1 do
-        Frame.precalc_partn[i] = 4 - math.floor(i / Frame.PartHeight)
-        Frame.precalc_localy[i] = i % Frame.PartHeight
-    end
-
     -- Renders the frame from the given framebuffer address.
     -- @param framebuffer_addr The address of the framebuffer to render.
     function Frame:RenderFrame(framebuffer_addr)
@@ -412,8 +397,8 @@ function RVEMU_GetFrame(CPU)
                 for i=0,3 do
                     local data_loc = data % 0x100
                     local color = self.vga_to_rgb[data_loc]
-                    local pixel = self:GetPixel(x + i, y, self.precalc_partn[y], self.precalc_localy[y], offset)
-                    if color ~= pixel.color then
+                    local pixel = self.pixels[offset + i + 1]
+                    if data_loc ~= pixel.color then
                         pixel:SetColorTexture(unpack(color))
                         pixel.color = data_loc
                     end
