@@ -335,7 +335,9 @@ function RVEMU_GetFrame(CPU)
         for i = 0, self.ScreenHeight-1 do
             for j = 0, self.ScreenWidth-1 do
                 local pixel = self:CreateTexture()
-                pixel:SetColorTexture(0, 0, 0)
+                pixel:SetTexture("Interface\\Addons\\DoomWithin\\palette.blp")
+                pixel:SetTexCoord(0,1/256,0,1)
+                pixel:SetAllPoints(self)
                 pixel:SetSize(2, 2)
                 pixel:SetDrawLayer("ARTWORK", 1)
                 pixel.color = 0
@@ -396,10 +398,12 @@ function RVEMU_GetFrame(CPU)
 
                 for i=0,3 do
                     local data_loc = data % 0x100
-                    local color = self.vga_to_rgb[data_loc]
+                    -- local color = self.vga_to_rgb[data_loc]
                     local pixel = self.pixels[offset + i + 1]
                     if data_loc ~= pixel.color then
-                        pixel:SetColorTexture(unpack(color))
+                        local tex_pos = data_loc / 256
+                        pixel:SetTexCoord(tex_pos + 0.0009765625, tex_pos + 0.001953125--[[1/512]],0,1)
+                        --pixel:SetColorTexture(unpack(color))
                         pixel.color = data_loc
                     end
                     data = bit.rshift(data, 8)

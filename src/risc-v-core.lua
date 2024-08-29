@@ -525,6 +525,7 @@ function RVEMU_GetCore()
             end
             local pc = self.registers[33]
             local ra = self.registers[1]
+            local a7 = self.registers[17]
             local instruction = self.memory:Get(pc)
             local start_time = debugprofilestop()
             old_step(self)
@@ -533,7 +534,7 @@ function RVEMU_GetCore()
             
             local profiling_log = self.profiling_log
             local lplog = #profiling_log
-            profiling_log[lplog + 1] = { pc, ra, instruction, end_time - start_time }
+            profiling_log[lplog + 1] = { pc, ra, a7, instruction, end_time - start_time }
 
             if lplog % (n * 10) == 0 then
                 self.is_running = 0

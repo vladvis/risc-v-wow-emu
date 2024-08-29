@@ -67,7 +67,7 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         --do { ... } while (count--);
         for i=count,0,-1 do
         -- *dest = dc_colormap[dc_source[(frac>>FRACBITS)&127]];
-            local source_idx = bit.band(bit.rshift(frac, 16), 127)
+            local source_idx = bit.rshift(frac, 16) % 0x80
             local colormap_idx =  read1(dc_source + source_idx)
             local pixel_value = read1(dc_colormap + colormap_idx)
             write1(dest, pixel_value)
@@ -99,48 +99,6 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             position = position + step
         end
     elseif syscall_num == 107 then -- draw_patch
-        
-        -- void DG_DrawPatch(int col, int w, int x, uint8_t *desttop, uint8_t* source, uint8_t *m_col, uint8_t *m_patch) {
-        --     #ifdef ENABLE_WOW_API
-        --         asm volatile (
-        --             "mv a0, %0\n"  
-        --             "mv a1, %1\n"  
-        --             "mv a2, %2\n"  
-        --             "mv a3, %3\n"  
-        --             "mv a4, %4\n"  
-        --             "mv a5, %5\n"  
-        --             "mv a6, %6\n"  
-        --             "li a7, %7\n"  
-        --             "ecall\n"      
-        --             : 
-        --             : "r" (col), "r" (w), "r" (x), "r" (desttop), "r" (source), "r" (m_col), "r" (m_patch), "i" (SYS_WOW_draw_patch)  
-        --             : "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"  
-        --         );
-        --     #else
-        --         int count;
-        --         uint8_t* dest;
-            
-        --         for ( ; col<w ; x++, col++, desttop++)
-        --         {
-        --             m_col = ((byte *)m_patch + LONG(*(int *)((char *)m_patch + 8 + col * 4))); // + (*(m_patch + 8 + 4 * col)) );
-            
-        --             // step through the posts in a column
-        --             while (*(m_col) != 0xff )
-        --             {
-        --                 source = m_col + 3;
-        --                 dest = desttop + (*m_col)*320;
-        --                 count = *(m_col + 1);
-            
-        --                 while (count--)
-        --                 {
-        --                     *dest = *source++;
-        --                     dest += 320;
-        --                 }
-        --                 m_col = (m_col + *(m_col + 1) + 4);
-        --             }
-        --         }
-        --     #endif
-        --     }
         local col = registers[10]
         local w = registers[11]
         local x = registers[12]

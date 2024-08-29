@@ -304,10 +304,12 @@ def create_palette_texture(rgb_colors):
     for c in rgb_colors:
         pal.extend(c)
 
-    img = Image.new("P", (256, 1))
+    img = Image.new("P", (1024, 2)) # account for 2x2 pixels and separate adjacent colors
     img.putpalette(pal, 'RGB')
     for i in range(256):
-        img.putpixel((i, 0), rgb_colors[i])
+        for x in range(4):
+            for y in range(2):
+                img.putpixel((i*4 + x, y), i)
     return img
 
 palette_texture = create_palette_texture(DOOM_PALETTE)
