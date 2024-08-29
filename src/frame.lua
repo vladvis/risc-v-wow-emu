@@ -389,7 +389,40 @@ function RVEMU_GetFrame(CPU)
 
     -- Renders the frame from the given framebuffer address.
     -- @param framebuffer_addr The address of the framebuffer to render.
-    function Frame:RenderFrame(framebuffer_addr)
+    function Frame:RenderFrame(framebuffer)
+        -- local read4 = self.CPU.memory:Read(4)
+        for offset = 0, 63999 do
+            local data = framebuffer[offset]
+
+            local pixel = self.pixels[offset + 1]
+            if data ~= pixel.color then
+                local tex_pos = data / 256
+                pixel:SetTexCoord(tex_pos + 0.0009765625, tex_pos + 0.001953125--[[1/512]],0,1)
+                pixel.color = data
+            end
+        end
+    end
+
+        -- Renders the frame from the given framebuffer address.
+    -- @param framebuffer_addr The address of the framebuffer to render.
+    function Frame:RenderFrame(framebuffer)
+        -- local read4 = self.CPU.memory:Read(4)
+        for offset = 0, 63999 do
+            local data = framebuffer[offset]
+
+            local pixel = self.pixels[offset + 1]
+            if data ~= pixel.color then
+                local tex_pos = data / 256
+                pixel:SetTexCoord(tex_pos + 0.0009765625, tex_pos + 0.001953125--[[1/512]],0,1)
+                pixel.color = data
+            end
+        end
+    end
+
+    
+    -- Renders the frame from the given framebuffer address.
+    -- @param framebuffer_addr The address of the framebuffer to render.
+    function Frame:RenderFrameWithAddr(framebuffer_addr)
         local read4 = self.CPU.memory:Read(4)
         for x = 0, 320-1, 4 do
             for y = 0, 200-1 do

@@ -338,6 +338,12 @@ function RVEMU_GetCore()
         self.profiling_log = {}
         self.counter = 0
 
+        -- TODO: doublecheck that its an arrray, maybe with 0 index present Lua creates a hashtable
+        self.framebuffer = {}
+        for i = 0, 320 * 200 - 1 do
+            self.framebuffer[i] = 0
+        end
+
     end
 
     function RiscVCore:DecodeInstruction(instruction)

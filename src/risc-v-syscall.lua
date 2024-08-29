@@ -26,9 +26,9 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         print("togglewindow was called")
         CPU.frame:ToggleWindow()
     elseif syscall_num == 102 then -- render_framebuffer
-
         local framebuffer_addr = registers[10]
-        CPU.frame:RenderFrame(framebuffer_addr)
+        CPU.frame:RenderFrame(CPU.framebuffer)
+        -- CPU.frame:RenderFrameWithAddr(framebuffer_addr)
         
         CPU.frame_cnt = CPU.frame_cnt + 1
         if CPU.frame_cnt >= 50 then
@@ -62,6 +62,9 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         local frac = registers[13]
         local frac_step = registers[14]
         local count = registers[15]
+        local framebuffer_base = registers[16]
+        
+        local framebuffer = CPU.framebuffer
         local write1 = CPU.memory:Write(1)
         local read1 = CPU.memory:Read(1)
         --do { ... } while (count--);
@@ -70,8 +73,8 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             local source_idx = bit.rshift(frac, 16) % 0x80
             local colormap_idx =  read1(dc_source + source_idx)
             local pixel_value = read1(dc_colormap + colormap_idx)
-            write1(dest, pixel_value)
-
+            -- write1(dest, pixel_value)
+            framebuffer[dest - framebuffer_base] = pixel_value
             dest = dest + 320;
             frac = frac + frac_step
         end
@@ -83,6 +86,9 @@ function RVEMU_handle_syscall(CPU, syscall_num)
         local position = registers[13]
         local step = registers[14]
         local count = registers[15]
+        local framebuffer_base = registers[16]
+
+        local framebuffer = CPU.framebuffer
         local write1 = CPU.memory:Write(1)
         local read1 = CPU.memory:Read(1)
         
@@ -93,25 +99,32 @@ function RVEMU_handle_syscall(CPU, syscall_num)
 
             local source_val = read1(ds_source + spot)
             local val = read1(ds_colormap + source_val)
-            write1(dest, val)
-
+            -- write1(dest, val)
+            framebuffer[dest - framebuffer_base] = val
             dest = dest + 1
             position = position + step
         end
     elseif syscall_num == 107 then -- draw_patch
         local col = registers[10]
-        local w = registers[11]
+        local is_screen_buffer = registers[11]
         local x = registers[12]
         local desttop = registers[13]
         local source = registers[14]
         local m_col = registers[15]
         local m_patch = registers[16]
+
+        local framebuffer_base = registers[31] -- t6
+
+        local framebuffer = CPU.framebuffer
         local write1 = CPU.memory:Write(1)
         local read1 = CPU.memory:Read(1)
+        local read2 = CPU.memory:Read(2)
         local read4 = CPU.memory:Read(4)
+
+        local w = read2(m_patch)
         local count
         local dest
-
+        -- assert(w == read2(m_patch), "w is not equal to read2(m_patch)")
         while col < w do
             m_col = m_patch + read4(m_patch + 8 + col * 4)
             while read1(m_col) ~= 0xff do
@@ -119,7 +132,14 @@ function RVEMU_handle_syscall(CPU, syscall_num)
                 dest = desttop + read1(m_col) * 320
                 count = read1(m_col + 1)
                 while count > 0 do
-                    write1(dest, read1(source))
+                    -- cant use direct framebuffer access here
+                    -- because temporary framebuffer is sometimes as dest
+                    if is_screen_buffer == 1 then
+                        framebuffer[dest - framebuffer_base] = read1(source)
+                    else
+                        write1(dest, read1(source))
+                    end
+
                     dest = dest + 320
                     source = source + 1
                     count = count - 1
@@ -131,7 +151,61 @@ function RVEMU_handle_syscall(CPU, syscall_num)
             desttop = desttop + 1
         end
     
-    elseif syscall_num == 108 then -- memcpy
+    elseif syscall_num == 108 then -- copy_rect
+        -- void DG_CopyRect(int srcx, int srcy, uint8_t *source, int width, int height, int destx, int desty) {
+        --     #ifdef ENABLE_WOW_API
+        --         asm volatile (
+        --             "mv a0, %0\n"  
+        --             "mv a1, %1\n"  
+        --             "mv a2, %2\n"  
+        --             "mv a3, %3\n"  
+        --             "mv a4, %4\n"  
+        --             "mv a5, %5\n"  
+        --             "mv a6, %6\n"  
+        --             "li a7, %7\n"  
+        --             "ecall\n"      
+        --             : 
+        --             : "r" (srcx), "r" (srcy), "r" (source), "r" (width), "r" (height), "r" (destx), "r" (desty), "i" (SYS_WOW_copy_rect)  
+        --             : "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"  
+        --         );
+        --     #else
+        --         src = source + SCREENWIDTH * srcy + srcx; 
+        --         dest = dest_screen + SCREENWIDTH * desty + destx; 
+        --         for ( ; height>0 ; height--) 
+        --         { 
+                    
+        --             DG_memcpy(dest, src, width); 
+        --             src += SCREENWIDTH; 
+        --             dest += SCREENWIDTH; 
+        --         }
+        --     #endif
+        --     }
+        local srcx = registers[10]
+        local srcy = registers[11]
+        local source = registers[12]
+        local width = registers[13]
+        local height = registers[14]
+        local destx = registers[15]
+        local desty = registers[16]
+        
+        local framebuffer = CPU.framebuffer
+        
+        local src = source + 320 * srcy + srcx
+        local dest = 320 * desty + destx
+        local write1 = CPU.memory:Write(1)
+        local read1 = CPU.memory:Read(1)
+        for i = 0, height-1 do
+            for j = 0, width-1 do
+                -- write1(dest + j, read1(src + j))
+                framebuffer[dest + j] = read1(src + j)
+            end
+            src = src + 320
+            dest = dest + 320
+        end
+
+
+
+    elseif syscall_num == 109 then -- memcpy
         -- aligned writes are much faster
         -- implementing https://github.com/nxp-mcuxpresso/mcux-sdk/blob/675a70e9b9ea5de2177f8881c31f464e0cb30528/utilities/misc_utilities/fsl_memcpy.S
         local write1 = CPU.memory:Write(1)
