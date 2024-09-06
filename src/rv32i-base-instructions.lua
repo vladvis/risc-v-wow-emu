@@ -697,13 +697,13 @@ end
 -- @param imm_value The immediate value for the operation.
 function RVEMU_BaseInstructions_SYSTEM(CPU, rd, funct3, rs1, imm_value)
     local registers = CPU.registers
-
+    local ecall_handler = CPU.ecall_handler
     if funct3 == 0 then
         return function(next, pc)
             return function()
                 if imm_value == 0 then -- ECALL
                     local syscall_num = registers[17]
-                    RVEMU_handle_syscall(CPU, syscall_num)
+                    ecall_handler(CPU, syscall_num)
                 elseif imm_value == 1 then -- EBREAK
                     print("EBREAK encountered at PC: " .. tostring(pc))
                     CPU.is_running = 0

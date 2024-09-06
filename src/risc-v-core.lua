@@ -160,7 +160,8 @@ function RVEMU_GetCore()
 
     -- Initializes the CPU with registers, memory, and instruction handlers.
     -- @param init_handler The initialization handler function for the CPU.
-    function RiscVCore:InitCPU(init_handler)
+    -- @param ecall_handler The ecall handler function for the CPU.
+    function RiscVCore:InitCPU(init_handler, ecall_handler)
         self.registers = {
             0,0,0,0,0,0,0,0, -- x0..
             0,0,0,0,0,0,0,0, -- .
@@ -310,8 +311,6 @@ function RVEMU_GetCore()
             can_branch = false
         }
 
-        self.frame = RVEMU_GetFrame(self)
-
         self:InitCSR()
         self.memory = RVEMU_GetMemory()
         self.instr_cache = {}
@@ -331,18 +330,11 @@ function RVEMU_GetCore()
         self.is_stopped = 0
         self.time_sum = 0
         
-        self.frame_start_time = GetTime()
-        self.frame_cnt = 0
-
         self.is_profiling = false
         self.profiling_log = {}
         self.counter = 0
 
-        -- TODO: doublecheck that its an arrray, maybe with 0 index present Lua creates a hashtable
-        self.framebuffer = {}
-        for i = 0, 320 * 200 - 1 do
-            self.framebuffer[i] = 0
-        end
+        self.ecall_handler = ecall_handler
 
     end
 
@@ -489,7 +481,6 @@ function RVEMU_GetCore()
 
     -- Stops the execution of the CPU and hides the frame.
     function RiscVCore:Stop()
-        self.frame:Hide()
         self.is_stopped = 1
         self.is_running = 0
     end
