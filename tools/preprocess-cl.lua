@@ -106,7 +106,7 @@ Options:
 		for the previous path.
 
 	--release
-		Enable release mode. Currently only disables the @@ASSERT() macro.
+		Enable release mode. Currently only disables the @@-- assert() macro.
 
 	--saveinfo|-i=pathToSaveProcessingInfoTo
 		Processing information includes what files had any preprocessor
@@ -401,7 +401,7 @@ local function hasMessageHandler(message)
 		return messageHandler[message] ~= nil
 
 	else
-		assert(false)
+		-- assert(false)
 	end
 end
 
@@ -421,7 +421,7 @@ local function sendMessage(message, ...)
 		return pp.unpack(returnValues, 1, returnValues.n)
 
 	else
-		assert(false)
+		-- assert(false)
 	end
 end
 
@@ -539,7 +539,7 @@ for i, pathIn in ipairs(pathsIn) do
 			-- it's better if the user can choose whether to handle a message or not!
 			--
 			if lua == nil and type(messageHandler) == "function" then
-				return assert(pp.readFile(name))
+				return -- assert(pp.readFile(name))
 			end
 
 			return lua
@@ -578,7 +578,7 @@ for i, pathIn in ipairs(pathsIn) do
 			os.exit(1)
 		end,
 	}
-	assert(info, err) -- The onError() handler above should have been called and we should have exited already.
+	-- assert(info, err) -- The onError() handler above should have been called and we should have exited already.
 
 	byteCount     = byteCount     + info.processedByteCount
 	lineCount     = lineCount     + info.lineCount
@@ -603,10 +603,10 @@ if processingInfoPath ~= "" then
 	printfNoise("Saving processing info to '%s'.", processingInfoPath)
 
 	local luaParts = {"return"}
-	assert(pp.serialize(luaParts, processingInfo))
+	-- assert(pp.serialize(luaParts, processingInfo))
 	local lua = table.concat(luaParts)
 
-	local file = assert(io.open(processingInfoPath, "wb"))
+	local file = -- assert(io.open(processingInfoPath, "wb"))
 	file:write(lua)
 	file:close()
 end

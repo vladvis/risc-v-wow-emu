@@ -50,18 +50,16 @@ function RVEMU_GetMemory()
     function RiscVMemory:Read(vsize)
         if vsize == 4 then
             return function(addr)
-                -- assert(addr % 4 == 0, "addr must be aligned (read)")
-                return self:Get(addr)
-                -- local misalign = addr % 4
-                -- if misalign == 0 then -- aligned read
-                --     return self:Get(addr)
-                -- else -- misaligned read
-                --     print("misaligned read")
-                --     local misalign = misalign
-                --     local val1 = bit.rshift(self:Get(addr - misalign), misalign * 8)
-                --     local val2 = (self:Get(addr + (4 - misalign)) * 2^((4 - misalign) * 8))--[[% 0x100000000]]
-                --     return bit.bor(val1, val2)
-                -- end
+                local misalign = addr % 4
+                if misalign == 0 then -- aligned read
+                    return self:Get(addr)
+                else -- misaligned read
+                    print("misaligned read")
+                    local misalign = misalign
+                    local val1 = bit.rshift(self:Get(addr - misalign), misalign * 8)
+                    local val2 = (self:Get(addr + (4 - misalign)) * 2^((4 - misalign) * 8))--[[% 0x100000000]]
+                    return bit.bor(val1, val2)
+                end
             end
         elseif vsize == 2 then
             return function(addr)
@@ -106,21 +104,21 @@ function RVEMU_GetMemory()
 
         if vsize == 4 then
             return function(addr, value)
-                -- assert(addr % 4 == 0, "addr must be aligned (write)")
-                self:Set(addr, value)
-                -- local misalign = bit.band(addr, 3)
-                -- if misalign == 0 then -- aligned write
-                --     self:Set(addr, value)
-                -- else -- misaligned write
-                --     print("misaligned write")
-                --     local val1 = bit.band(self:Get(addr - misalign), bit.rshift(0xffffffff, 32 - misalign * 8))
-                --     val1 = bit.bor(val1, (value * 2^(misalign * 8))) ----[[% 0x100000000]]
-                --     self:Set(addr - misalign, val1)
+                local misalign = bit.band(addr, 3)
+                if misalign == 0 then -- aligned write
+                    self:Set(addr, value)
+                else -- misaligned write
+                    -- TODO: Game will crash if we allow some misaligned write during loading. Keep it this way so it works. 
 
-                --     local val2 = bit.band(self:Get(addr + (4 - misalign)), (0xffffffff * 2^(misalign * 8)))
-                --     val2 = bit.bor(val2, bit.rshift(value, (32 - misalign * 8))) ----[[% 0x100000000]]
-                --     self:Set(addr + (4 - misalign), val2)
-                -- end
+                    -- print("misaligned write")
+                    -- local val1 = bit.band(self:Get(addr - misalign), bit.rshift(0xffffffff, 32 - misalign * 8))
+                    -- val1 = bit.bor(val1, (value * 2^(misalign * 8))) ----[[% 0x100000000]]
+                    -- self:Set(addr - misalign, val1)
+
+                    -- local val2 = bit.band(self:Get(addr + (4 - misalign)), (0xffffffff * 2^(misalign * 8)))
+                    -- val2 = bit.bor(val2, bit.rshift(value, (32 - misalign * 8))) ----[[% 0x100000000]]
+                    -- self:Set(addr + (4 - misalign), val2)
+                end
             end
         elseif vsize == 2 then
             return function(addr, value)

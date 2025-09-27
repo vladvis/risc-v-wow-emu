@@ -50,7 +50,7 @@ function RVEMU_GetCore()
     -- @param source The register index to load the value from.
     -- @return The value stored in the specified register.
     function RiscVCore:LoadRegister(source)
-        --assert((source >= 0) and (source <= 31), "register x".. tostring(source) .." isn't existed (load)")
+        ---- assert((source >= 0) and (source <= 31), "register x".. tostring(source) .." isn't existed (load)")
         return self.registers[source]
     end
 
@@ -59,7 +59,7 @@ function RVEMU_GetCore()
     -- @param value The value to store in the register.
     function RiscVCore:StoreRegister(dest, value)
         if dest ~= 0 then
-            --assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
+            ---- assert((dest >= 1) and (dest <= 31), "register x".. tostring(dest) .." isn't existed (store)")
             self.registers[dest] = value % 0x100000000
         end
     end
@@ -67,7 +67,7 @@ function RVEMU_GetCore()
     -- Stores a value into the program counter (PC) register.
     -- @param value The value to store in the PC register.
     --[[function RiscVCore:StorePC(value)
-        --assert(value % 4 == 0, "pc must be aligned")
+        ---- assert(value % 4 == 0, "pc must be aligned")
         self.jumped = true
         self.registers[33] = value % 0x100000000
     end]]
@@ -140,7 +140,7 @@ function RVEMU_GetCore()
         elseif csr_address == 0x003 then
             return self:EncodeFCSR()
         else
-            --assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+            ---- assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
             return self.csr[csr_address]
         end
     end
@@ -153,7 +153,7 @@ function RVEMU_GetCore()
         elseif csr_address == 0x003 then
             self:DecodeFCSR(value)
         else
-            --assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
+            ---- assert(self.csr[csr_address] ~= nil, "CSR address " .. tostring(csr_address) .. " does not exist")
             self.csr[csr_address] = value % 0x100000000
         end
     end
@@ -162,6 +162,10 @@ function RVEMU_GetCore()
     -- @param init_handler The initialization handler function for the CPU.
     -- @param ecall_handler The ecall handler function for the CPU.
     function RiscVCore:InitCPU(init_handler, ecall_handler)
+        -- Load JIT code generators
+        local jit = RVEMU_JIT
+
+
         self.registers = {
             0,0,0,0,0,0,0,0, -- x0..
             0,0,0,0,0,0,0,0, -- .
@@ -183,12 +187,30 @@ function RVEMU_GetCore()
             nx = false -- inexact
         }
 
+        -- Add block JIT cache
+        self.blockJIT = {}
+        self.blockJITMinSize = 4 -- Minimum instructions for JIT
+        self.blockJITEnabled = false -- Flag to enable/disable JIT
+        
+        self.enableJITRecording = false
+        self.jitRecording = {}
+
+        -- Cache frequently used bit operations
+        self.bit_band = bit.band
+        self.bit_bor = bit.bor
+        self.bit_bxor = bit.bxor
+        self.bit_rshift = bit.rshift
+        self.bit_arshift = bit.arshift
+        self.bit_lshift = bit.lshift
+        self.bit_bnot = bit.bnot
+
         self.opcodes = {}
 
         self.opcodes[bin("0110111")] = {
             name = "LUI",
             type = "U",
             handler = RVEMU_BaseInstructions_LUI,
+            codegen_handler = jit.LUI,
             can_branch = false
         }
 
@@ -196,6 +218,7 @@ function RVEMU_GetCore()
             name = "AUIPC",
             type = "U",
             handler = RVEMU_BaseInstructions_AUIPC,
+            codegen_handler = jit.AUIPC,
             can_branch = false
         }
 
@@ -203,27 +226,31 @@ function RVEMU_GetCore()
             name = "JAL",
             type = "J",
             handler = RVEMU_BaseInstructions_JAL,
-            can_branch = false
+            codegen_handler = jit.JAL,
+            can_branch = false  -- JAL is not a branching instruction as target is known at compile time
         }
 
         self.opcodes[bin("1100111")] = {
             name = "JALR",
             type = "I",
             handler = RVEMU_BaseInstructions_JALR,
-            can_branch = true
+            codegen_handler = jit.JALR,
+            can_branch = true   -- JALR is a true branch as target depends on register
         }
 
         self.opcodes[bin("1100011")] = {
             name = "BRANCH",
             type = "B",
             handler = RVEMU_BaseInstructions_BRANCH,
-            can_branch = true
+            codegen_handler = jit.BRANCH,
+            can_branch = true   -- Conditional branches are true branches
         }
 
         self.opcodes[bin("0000011")] = {
             name = "LOAD",
             type = "I",
             handler = RVEMU_BaseInstructions_LOAD,
+            codegen_handler = jit.LOAD,
             can_branch = false
         }
 
@@ -231,6 +258,7 @@ function RVEMU_GetCore()
             name = "STORE",
             type = "S",
             handler = RVEMU_BaseInstructions_STORE,
+            codegen_handler = jit.STORE,
             can_branch = false
         }
 
@@ -238,6 +266,7 @@ function RVEMU_GetCore()
             name = "OP-IMM",
             type = "I",
             handler = RVEMU_BaseInstructions_OP_IMM,
+            codegen_handler = jit.OP_IMM,
             can_branch = false
         }
 
@@ -245,6 +274,7 @@ function RVEMU_GetCore()
             name = "OP",
             type = "R",
             handler = RVEMU_BaseInstructions_OP,
+            codegen_handler = jit.OP,
             can_branch = false
         }
 
@@ -338,22 +368,24 @@ function RVEMU_GetCore()
 
     end
 
+    -- Decodes an instruction and returns its handler function and metadata
     function RiscVCore:DecodeInstruction(instruction)
-        local bit_band = bit.band
-        local bit_rshift = bit.rshift
-        local bit_bor = bit.bor
+        local bit_band = self.bit_band
+        local bit_bor = self.bit_bor
+        local bit_rshift = self.bit_rshift
         
-        local opcodes = self.opcodes
         local opcode = bit_band(instruction, 0x7f)
-        local opcode_info = opcodes[opcode]
+        local opcode_info = self.opcodes[opcode]
         local instr_type = opcode_info.type
-        local handler = opcode_info.handler
         local result = nil
         local pc_delta = 4
+        local r_regs = {}
+        local w_regs = {}
+
         if instr_type == "U" then
             local rd = decode_rd(instruction)
             local imm_value = bit_band(instruction, 0xfffff000)
-            result = { rd, imm_value } 
+            result = { rd, imm_value }
 
         elseif instr_type == "J" then
             local rd = decode_rd(instruction)
@@ -406,35 +438,152 @@ function RVEMU_GetCore()
             local funct3 = decode_funct3(instruction)
             local rs1 = decode_rs1(instruction)
             local rs2 = decode_rs2(instruction)
-            local funct2 = bit_rshift(instruction, 25)
+            local funct2 = decode_funct2(instruction)
             local rs3 = decode_rs3(instruction)
             result = { rd, funct3, rs1, rs2, funct2, rs3 }
         end
+
+        -- Create both runtime and JIT handlers
+        local runtime_handler = opcode_info.handler(self, unpack(result))
+        local jit_handler = nil
+        if opcode_info.codegen_handler then
+            jit_handler = opcode_info.codegen_handler(r_regs, w_regs, unpack(result))
+        end
+
         return {
-            opcode_info.handler(self, unpack(result)),
+            runtime_handler,
             opcode_info,
-            pc_delta
+            pc_delta,
+            jit_handler,
+            r_regs,
+            w_regs,
         }
     end
 
     --- decode functions up to the next branch
     function RiscVCore:DecodeInstructionSequence(pc)
+        local og_pc = pc
         -- forward loop to get to the next branch
         local instr_seq = {}
+        local pc_seq = {}
+
         while true do
             local instruction = self.memory:Get(pc)
             local instr_data = self.instr_cache[instruction]
             if instr_data == nil then
-                -- print(pc, instruction)
                 instr_data = self:DecodeInstruction(instruction)
                 self.instr_cache[instruction] = instr_data
             end
+            
+            
             instr_seq[#instr_seq + 1] = instr_data
+            pc_seq[#pc_seq + 1] = pc
             if instr_data[2].can_branch then break end
             pc = pc + instr_data[3]
         end
 
-        -- backward loop to generate the instruction sequence with knowledge of the next instructions
+        -- For longer sequences, try JIT compilation
+        if self.blockJITEnabled and #instr_seq >= self.blockJITMinSize then
+            -- Check if we have a cached JIT block
+            
+            local r_regs = {}
+            local w_regs = {}
+            for i, instr_data in pairs(instr_seq) do
+                for i, reg in pairs(instr_data[5]) do
+                    r_regs[i] = reg
+                end
+                for i, reg in pairs(instr_data[6]) do
+                    w_regs[i] = reg
+                end
+            end
+
+            
+            -- Generate JIT code
+            local code_lines = {
+                "return function(CPU)",
+                "  local regs = CPU.registers",
+                "  local memory = CPU.memory",
+                -- string.format("  local pc = 0x%x", pc),
+                "  local bit_band = CPU.bit_band",
+                "  local bit_bor = CPU.bit_bor",
+                "  local bit_rshift = CPU.bit_rshift",
+                "  local bit_bxor = CPU.bit_bxor",
+                "  local bit_arshift = CPU.bit_arshift",
+                "  local RVEMU_set_sign = _G.RVEMU_set_sign",
+                "  local RVEMU_set_unsign = _G.RVEMU_set_unsign",
+                "  local CPU_memory_Read = memory.Read",
+                "  local CPU_memory_Read_1 = CPU_memory_Read(memory, 1)",
+                "  local CPU_memory_Read_2 = CPU_memory_Read(memory, 2)",
+                "  local CPU_memory_Read_4 = CPU_memory_Read(memory, 4)",
+                "  local CPU_memory_Write = memory.Write",
+                "  local CPU_memory_Write_1 = CPU_memory_Write(memory, 1)",
+                "  local CPU_memory_Write_2 = CPU_memory_Write(memory, 2)",
+                "  local CPU_memory_Write_4 = CPU_memory_Write(memory, 4)",
+                "  local addr, value, cond, op1, op2, full_result = 0, 0, 0, 0, 0, 0",
+                "  return function()",
+            }
+            for i, reg in pairs(r_regs) do -- use local variables for r_regs
+                code_lines[#code_lines + 1] = string.format("  local r%d = regs[%d]", i, i)
+            end
+
+            -- Generate code for each instruction
+            local success = true
+            for i, instr_data in ipairs(instr_seq) do
+                local is_last = (i == #instr_seq)
+                local jit_handler = instr_data[4]
+                if not jit_handler then
+                    success = false
+                    --print("JIT: No JIT handler for instruction " .. i)
+                    
+                    break
+                end
+                code_lines[#code_lines + 1] = string.format("  -- pc = 0x%x", pc_seq[i])
+                if not jit_handler(code_lines, pc_seq[i]) then
+                    success = false
+                    -- assert(false, "JIT: Failed to generate code for instruction " .. i)
+                    break
+                end
+            end
+            
+            if success then
+                -- Finalize the block
+                -- code_lines[#code_lines + 1] = "  CPU.registers[33] = "
+
+                -- save the modified registers
+                for i, reg in pairs(w_regs) do
+                    code_lines[#code_lines + 1] = string.format("  regs[%d] = r%d", i, i)
+                end
+
+                code_lines[#code_lines + 1] = "end"
+                code_lines[#code_lines + 1] = "end"
+                
+                local source = table.concat(code_lines, "\n")
+                local fn, err = loadstring(source)
+                if fn then
+                    local block_fn = fn()(self)
+                    if block_fn then
+                        --print(string.format("JIT: Compiled block at PC: 0x%x", og_pc))
+                        print("JIT: Instruction count: " .. #instr_seq)
+                        -- print("JIT: Block function: " .. tostring(source))
+                        self.addr_cache[og_pc] = block_fn
+                        if self.enableJITRecording then
+                            --print("JIT: Recoding block at PC: 0x" .. string.format("%x", og_pc))
+                            self.jitRecording[og_pc] = source
+                        end
+
+                        return {
+                            block_fn,
+                            #instr_seq,
+                        }
+                    end
+                else
+                    print("JIT: Error compiling block: " .. tostring(source))
+                    assert(false, "JIT: Error compiling block: " .. tostring(err))
+                end
+            end
+        end
+
+        -- Fall back to closure chain for shorter sequences or if JIT fails
         local seq_len = #instr_seq
         local fn = nil
         local cur_instr = instr_seq[seq_len]
@@ -448,18 +597,12 @@ function RVEMU_GetCore()
         end
         fn = cur_instr[1](fn, pc)
         self.addr_cache[pc] = fn
-        return fn 
+        return {
+            fn,
+            #instr_seq,
+        }
     end
 
-    -- Executes a instruction sequence in the CPU.
-    function RiscVCore:Step()
-        local pc = self.registers[33]
-        local decoded_instr = self.addr_cache[pc]
-        if decoded_instr == nil then
-            decoded_instr = self:DecodeInstructionSequence(pc)
-        end
-        return decoded_instr()
-    end
 
     -- Checks if the CPU should yield execution and schedules a resume if needed.
     function RiscVCore:MaybeYieldCPU()
@@ -493,6 +636,18 @@ function RVEMU_GetCore()
         end
     end
 
+    -- Modified Step function to use Block JIT
+    function RiscVCore:Step()
+        local pc = self.registers[33]
+        local decoded_instr = self.addr_cache[pc]
+
+        if decoded_instr == nil then
+            decoded_instr = self:DecodeInstructionSequence(pc)[1]
+        end
+        
+        return decoded_instr(self)
+    end
+
     --- decode single only a instruction disabling the sequencing
     function RiscVCore:DecodeSingleInstructionAsSequence(pc)
         local instruction = self.memory:Get(pc)
@@ -504,7 +659,7 @@ function RVEMU_GetCore()
         local pc_delta = instr_data[3]
         fn = instr_data[1](function() self.registers[33] = self.registers[33] + (pc_delta ~= nil and pc_delta or 0) end, pc)
         self.addr_cache[pc] = fn
-        return fn 
+        return {fn, 1}
     end
     -- Enable profiling and wrap the Step function to measure execution time.
     function RiscVCore:EnableProfiling(n)
@@ -532,11 +687,32 @@ function RVEMU_GetCore()
             local profiling_log = self.profiling_log
             local lplog = #profiling_log
             profiling_log[lplog + 1] = { pc, ra, a7, instruction, end_time - start_time }
-
             if lplog % (n * 10) == 0 then
                 self.is_running = 0
                 RunNextFrame(function() RVEMU_Resume(self) end)
             end
+        end
+    end
+
+
+    -- Enable Sequence profiling
+    function RiscVCore:EnableSequenceProfiling(n)
+        if self.is_profiling then
+            return
+        end
+        self.is_profiling = true
+        self.Step = function(self)
+            local pc = self.registers[33]
+            local decoded_instr = {self.addr_cache[pc], 0}
+
+            if decoded_instr[1] == nil then
+                decoded_instr = self:DecodeInstructionSequence(pc)
+            end
+            local start_time = debugprofilestop()
+            local result = decoded_instr[1](self)
+            local end_time = debugprofilestop()
+            self.profiling_log[#self.profiling_log + 1] = { pc, decoded_instr[2], end_time - start_time }
+            return result
         end
     end
     return RiscVCore
