@@ -182,7 +182,7 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
                 local addr = registers[rs1] + imm_value
                 value = CPU_memory_Read_1(addr)
                 value = RVEMU_set_unsign_32(RVEMU_set_sign_8(value))
-                registers[rd] = (value) % 0x100000000
+                registers[rd] = value
                 
                 return next()
             end
@@ -193,7 +193,7 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
                 local addr = registers[rs1] + imm_value
                 value = CPU_memory_Read_2(addr)
                 value = RVEMU_set_unsign_32(RVEMU_set_sign_16(value))
-                registers[rd] = (value) % 0x100000000
+                registers[rd] = value
                 
                 return next()
             end
@@ -203,7 +203,7 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
             return function()
                 local addr = registers[rs1] + imm_value
                 value = CPU_memory_Read_4(addr)
-                registers[rd] = (value) % 0x100000000
+                registers[rd] = value
                 
                 return next()
             end
@@ -213,7 +213,7 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
             return function()
                 local addr = registers[rs1] + imm_value
                 value = CPU_memory_Read_1(addr)
-                registers[rd] = (value) % 0x100000000
+                registers[rd] = value
                 
                 return next()
             end
@@ -223,7 +223,7 @@ function RVEMU_BaseInstructions_LOAD(CPU, rd, funct3, rs1, imm_value)
             return function()
                 local addr = registers[rs1] + imm_value
                 value = CPU_memory_Read_2(addr)
-                registers[rd] = (value) % 0x100000000
+                registers[rd] = value
                 
                 return next()
             end
