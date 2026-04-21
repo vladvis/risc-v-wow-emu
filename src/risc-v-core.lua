@@ -461,6 +461,16 @@ function RVEMU_GetCore()
         return decoded_instr()
     end
 
+    -- Executes exactly one instruction from the current PC, bypassing the
+    -- block-sequence decoder.  Used by the AOT run loop as the fallback path
+    -- for PCs that don't have a pre-compiled block (e.g. after indirect jumps
+    -- land in uncached code).
+    function RiscVCore:StepLegacy()
+        local pc = self.registers[33]
+        local fn = self:DecodeSingleInstructionAsSequence(pc)
+        fn()
+    end
+
     -- Checks if the CPU should yield execution and schedules a resume if needed.
     function RiscVCore:MaybeYieldCPU()
         local now = time()
@@ -502,7 +512,7 @@ function RVEMU_GetCore()
             self.instr_cache[instruction] = instr_data
         end
         local pc_delta = instr_data[3]
-        fn = instr_data[1](function() self.registers[33] = self.registers[33] + (pc_delta ~= nil and pc_delta or 0) end, pc)
+        local fn = instr_data[1](function() self.registers[33] = self.registers[33] + (pc_delta ~= nil and pc_delta or 0) end, pc)
         self.addr_cache[pc] = fn
         return fn 
     end

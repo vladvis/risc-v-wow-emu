@@ -2,3 +2,4 @@ deploy.conf
 .aider*
 **/.ipynbp_checkpoints/*
 tools/.ipynb_checkpoints/profiling-checkpoint.ipynb
+*.pyc
